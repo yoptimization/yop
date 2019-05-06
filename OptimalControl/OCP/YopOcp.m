@@ -253,6 +253,7 @@ classdef YopOcp < handle
             lbg = obj.getNlpConstraintLower;
             
             nx = obj(1).getNumberOfStates;
+            np = obj(1).getNumberOfParameters;
             
             for k=1:(length(obj)-1)              
                 % Sätta ihop parametrar?
@@ -260,6 +261,14 @@ classdef YopOcp < handle
                 g = vertcat(g, obj(k).NlpVector.IndependentFinal.get(1,1)-obj(k+1).NlpVector.IndependentInitial.get(1,1));
                 lbg(end+1) = 0;
                 ubg(end+1) = 0;
+                
+                g = vertcat(g, obj(k+1).NlpVector.IndependentFinal.get(1,1)-obj(k+1).NlpVector.IndependentInitial.get(1,1));
+                lbg(end+1) = 0;
+                ubg(end+1) = inf;
+                
+                g = vertcat(g, obj(k).NlpVector.Parameter.get(1,1)-obj(k+1).NlpVector.Parameter.get(1,1));
+                lbg(end+1:end+np) = zeros(np, 1);
+                ubg(end+1:end+np) = zeros(np, 1);
                 
                 g = vertcat(g, obj(k).NlpVector.State.get('end',1)-obj(k+1).NlpVector.State.get(1,1));
                 lbg(end+1:end+nx) = zeros(nx, 1);
@@ -437,6 +446,9 @@ classdef YopOcp < handle
                 elseif YopBoundaryFinalConstraint.isMember(constraint)
                     obj.Final = [obj.Final; ...
                         YopBoundaryFinalConstraint(constraint, obj.getInput, obj.getDescaling)];
+                    
+                else
+                    assert(false, 'Yop: Constraint not recognized')
                     
                 end
             end
