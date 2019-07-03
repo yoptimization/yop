@@ -1,11 +1,13 @@
 %% Goddard Rocket Landing
 % Author: Dennis Edblom
 % Create the Yop system
-sys = YopSystem('states', 3, 'controls', 1, ...
-    'model', @goddardRocketModel1);
+sys = YopSystem(...
+    'states', 3, ...
+    'controls', 1, ...
+    'model', @goddardRocketModel1 ...
+    );
 time = sys.t;
-% Rocket signals (symbolic)
-rocket = sys.y.rocket;
+rocket = sys.y.rocket; % Rocket signals (symbolic)
 
 %% Formulate optimal control problem
 ocp(1) = YopOcp();

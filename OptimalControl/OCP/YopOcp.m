@@ -15,6 +15,7 @@
 % along with Yop.  If not, see <https://www.gnu.org/licenses/>.
 % -------------------------------------------------------------------------
 classdef YopOcp < handle
+    
     properties                
         Systems
         Connections        
@@ -48,7 +49,9 @@ classdef YopOcp < handle
         CollocationCoefficients
         NlpVector
         DirectCollocation
+        
     end
+    
     methods % main functionality
         function obj = YopOcp()
         end
@@ -95,7 +98,8 @@ classdef YopOcp < handle
             obj.Constraints = [obj.Constraints, constraints];
         end
         
-        function solution = solve(obj, varargin)
+        % Multi-phase
+        function solution = solve(obj, varargin) 
             YopProgressTracker.start
             
             ip = inputParser;
@@ -123,6 +127,7 @@ classdef YopOcp < handle
             
         end     
                
+        % Multi-phase
         function build(obj, varargin)
             ip = inputParser;
             ip.FunctionName = 'build';
@@ -200,6 +205,7 @@ classdef YopOcp < handle
             end
         end
         
+        % Multi-phase
         function parameterize(obj, varargin)
             ip = inputParser;
             ip.FunctionName = 'parameterize';
@@ -230,6 +236,7 @@ classdef YopOcp < handle
             end
         end
         
+        % Multi-phase
         function solution = optimize(obj, varargin)
             ip = inputParser;
             ip.FunctionName = 'optimize';
@@ -256,7 +263,7 @@ classdef YopOcp < handle
             np = obj(1).getNumberOfParameters;
             
             for k=1:(length(obj)-1)              
-                % Sätta ihop parametrar?
+                % Sï¿½tta ihop parametrar?
                 
                 g = vertcat(g, obj(k).NlpVector.IndependentFinal.get(1,1)-obj(k+1).NlpVector.IndependentInitial.get(1,1));
                 lbg(end+1) = 0;
