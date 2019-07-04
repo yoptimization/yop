@@ -29,18 +29,47 @@
 
 
 
-ocp.max( rocket.height(t_f) );
-ocp.min( a*rocket.weight(t_0) - b*rocket.height(t_f) );
+ocp.max(   rocket.height(t_f) );
+ocp.max( a*rocket.height(t_f) - b*rocket.weight(t_0) );
 ocp.st(...
     'systems', sys, ...
-    t(t_0) == 0 , ...
+    t(t_0) == 0, ...
     rocket.velocity(t_0) == 0, ...
     rocket.height(t_0) == 0, ...
     rocket.mass(t_0) == m0, ...
     0  <= rocket.height <= inf , ...
     mf <= rocket.mass  <= m0, ...
     0  <= rocket.fuelMassFlow <= Fm ...
-    );
+    )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

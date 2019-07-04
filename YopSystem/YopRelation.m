@@ -15,6 +15,8 @@ classdef YopRelation < handle
         end
         
         function relation = le(x, y)
+            x = YopExpression.convert(x);
+            y = YopExpression.convert(y);
             relation = YopRelation(x, y, @le);
         end
         
@@ -27,8 +29,48 @@ classdef YopRelation < handle
         end
                 
         function v = value(obj)
-            % Rekursivt gå igenom trädet :)
+            v = obj.Relation(obj.Lhs.value, obj.Rhs.value); % Recursion               
         end
         
+        function rels = relations(obj)
+            if isa(obj.Lhs, 'YopRelation') && YopRelation.leafp(obj.Rhs)                
+                rels = 1 + relations(obj.Lhs);                
+                               
+            elseif YopRelation.leafp(obj.Lhs) && isa(obj.Rhs, 'YopRelation') 
+                rels = 1 + relations(obj.Rhs);
+                
+            elseif isa(obj.Lhs, 'YopRelation') && isa(obj.Rhs, 'YopRelation')
+                rels = 1 + relations(obj.Lhs) + relations(obj.Rhs);
+                
+            else
+                rels = 1;
+                
+            end
+        end
+        
+        function lm = leftmost(obj)
+            if YopRelation.leafp(obj.Lhs)
+                lm = obj.Lhs;
+            else
+                lm = leftmost(obj.Lhs);
+            end
+        end
+        
+        function lm = rightmost(obj)
+            if YopRelation.leafp(obj.Rhs)
+                lm = obj.Rhs;
+            else
+                lm = rightmost(obj.Rhs);
+            end
+        end
+        
+    end
+    
+    methods (Static)
+        
+        function bool = leafp(node)
+            bool = ~isa(node, 'YopRelation');
+        end
+
     end
 end

@@ -251,6 +251,8 @@ classdef YopExpression < handle
         
         
         function relation = le(x, y)
+            x = YopExpression.convert(x);
+            y = YopExpression.convert(y);
             relation = YopRelation(x, y, @le);
         end
     
@@ -261,6 +263,12 @@ classdef YopExpression < handle
     end
     
     methods (Static)
+        
+        function x = convert(x)
+            if isa(x, 'numeric')
+                x = YopExpression(x);
+            end
+        end
         
         function result = genericOperation(obj1, obj2, operation)
             result = YopExpression( operation(YopExpression.eval(obj1), YopExpression.eval(obj2)) );
