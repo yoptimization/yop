@@ -15,5 +15,9 @@
 % along with Yop.  If not, see <https://www.gnu.org/licenses/>.
 % -------------------------------------------------------------------------
 function t = t_0(expression)
-t = YopInitialTimepoint(expression);
+if nargin == 0
+    t = YopExpression(YopIndependentVariable.getIndependentInitial);
+else
+    t = YopInitialTimepoint(expression);
+end
 end

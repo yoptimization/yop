@@ -343,6 +343,17 @@ classdef YopSystem < handle & dynamicprops
             ne = length(obj.getExternalInput);
         end        
         
+        function t = t_0(obj)
+            % Non-static for syntax reasons. It should appear to be
+            % a method.
+            t = YopIndependentVariable.getIndependentInitial;
+        end
+        
+        function t = t_f(obj)
+            t = YopIndependentVariable.getIndependentFinal;
+        end
+           
+        
     end
     
     methods % To be developed

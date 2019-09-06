@@ -17,7 +17,7 @@
 classdef YopFinalTimepoint < YopTimepointExpression
    methods
        function obj = YopFinalTimepoint(expression)
-           obj@YopTimepointExpression('tf', expression);
+           obj@YopTimepointExpression(YopIndependentVariable.getIndependentFinal, expression);
        end
    end
 end

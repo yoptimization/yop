@@ -21,9 +21,8 @@ classdef YopIndependentVariable < handle
     end
     
     methods (Access = private)
-        function obj = YopIndependentVariable()
-            yopCustomPropertyNames;
-            obj.IndependentVariable = casadi.MX.sym(userIndependentVariableProperty);
+        function obj = YopIndependentVariable(name)
+            obj.IndependentVariable = casadi.MX.sym(name);
         end
     end
     
@@ -31,7 +30,8 @@ classdef YopIndependentVariable < handle
         function var = getIndependentVariable()
             persistent independent
             if isempty(independent)
-                obj = YopIndependentVariable();
+                yopCustomPropertyNames;
+                obj = YopIndependentVariable(userIndependentVariableProperty);
                 independent = obj;
             else
                 obj = independent;
@@ -42,7 +42,8 @@ classdef YopIndependentVariable < handle
         function var = getIndependentInitial()
             persistent independent
             if isempty(independent)
-                obj = YopIndependentVariable();
+                yopCustomPropertyNames;
+                obj = YopIndependentVariable(userIndependentInitial);
                 independent = obj;
             else
                 obj = independent;
@@ -53,7 +54,8 @@ classdef YopIndependentVariable < handle
         function var = getIndependentFinal()
             persistent independent
             if isempty(independent)
-                obj = YopIndependentVariable();
+                yopCustomPropertyNames;
+                obj = YopIndependentVariable(userIndependentFinal);
                 independent = obj;
             else
                 obj = independent;

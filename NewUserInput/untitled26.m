@@ -27,57 +27,38 @@
 % Wrap CasADi Variables?
 
 
-
-
-ocp.max(   rocket.height(t_f) );
-ocp.max( a*rocket.height(t_f) - b*rocket.weight(t_0) );
+ocp.max(   rocket.height(t_f)  );
+ocp.max( a*rocket.height(t_f) - b*rocket.weight(t_0) - c*integral(rocket.fuelFlow));
 ocp.st(...
     'systems', sys, ...
-    t(t_0) == 0, ...
+    'dynamics', sys, ...
+    t_0 == 0, ...
     rocket.velocity(t_0) == 0, ...
     rocket.height(t_0) == 0, ...
     rocket.mass(t_0) == m0, ...
-    0  <= rocket.height <= inf , ...
+    strict(0  <= rocket.height <= inf), ...
     mf <= rocket.mass  <= m0, ...
     0  <= rocket.fuelMassFlow <= Fm ...
-    )
+    );
 
+t_f - t_0 <= t_max;
 
+rocket.velocity(t_0) + rocket.heigth(t_0) == 0; % -> utvärdera hela uttrycket
 
+% hantering av:
+t_f - t_0 == 10 % Två parametrar. 
+% Eftersom de inte är av samma tidpunkt ska det specialhanteras.
+% Persistenta variabler om de kallas utan argument. De används sedan för
+% att göra anrop till 
 
+ocp2 = copy(ocp1);
+ocp2.remove( x(t_f) == 1 );
+ocp2.add( x(t_f) == 0 );
+ocp2.present;
 
+ocp2phase = ocp1/10 + ocp2; % Dividera målfn för ocp1 med 10 och addera mål fn för 1 och 2
+ocp2phase.solve('points', 'legendre', 'segments', [100; 100]);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+% Två steg:
+%   - Överlagra casadi
+%   - Tolka relationer som bivillkor

@@ -17,7 +17,7 @@
 classdef YopInitialTimepoint < YopTimepointExpression
    methods
        function obj = YopInitialTimepoint(expression)
-           obj@YopTimepointExpression('t0', expression);
+           obj@YopTimepointExpression(YopIndependentVariable.getIndependentInitial , expression);
        end
    end
 end

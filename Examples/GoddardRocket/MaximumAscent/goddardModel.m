@@ -27,6 +27,7 @@ dx = [dv;dh;dm];
 y.rocket.speed = v;
 y.rocket.height = h;
 y.rocket.fuelMass = m;
+y.rocket.fuelMassFlow = dm;
 y.rocket.thrust = T;
 y.drag.coefficient = D;
 y.drag.force = F_D;

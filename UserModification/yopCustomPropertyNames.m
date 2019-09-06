@@ -28,6 +28,8 @@ userModelHandle = 'model';
 
 % System inputs
 userIndependentVariableProperty = 't';
+userIndependentInitial = 't0';
+userIndependentFinal = 'tf';
 userStateProperty = 'x';
 userAlgebraicVariableProperty = 'z';
 userControlProperty = 'u';
