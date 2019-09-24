@@ -1,4 +1,4 @@
-classdef (InferiorClasses = {?YopVar, ?YopVarTimed, ?YopIntegral}) YopVarGraph < handle
+classdef (InferiorClasses = {?YopVar, ?YopVarTimed, ?YopIntegral}) YopVarGraph < handle & matlab.mixin.Copyable
     
     properties
         Operation
@@ -59,7 +59,7 @@ classdef (InferiorClasses = {?YopVar, ?YopVarTimed, ?YopIntegral}) YopVarGraph <
                 end
             end
             eval([inputname(1) '= elements']);
-        end        
+        end
     end
     
     methods % YopVar/-Graph Interface        
@@ -257,7 +257,7 @@ classdef (InferiorClasses = {?YopVar, ?YopVarTimed, ?YopIntegral}) YopVarGraph <
             % graph from left to right. May brake down if graph is not a 
             % valid constraint.
             % I.e. -1 <= f(x) <= 1 turns into:
-            % -1 <= f(x)
+            %  -1 <= f(x)
             %  f(x) <= 1
             
             if length(obj) > 1
@@ -287,7 +287,8 @@ classdef (InferiorClasses = {?YopVar, ?YopVarTimed, ?YopIntegral}) YopVarGraph <
                     YopVarGraph(obj.Operation, rightmostExpression(obj.lhs), leftmostExpression(obj.rhs)); ...
                     unnestRelations(obj.rhs) ...
                     ];                
-            end                   
+            end   
+            
         end
         
         function constraint = setToNlpForm(obj)
@@ -322,6 +323,16 @@ classdef (InferiorClasses = {?YopVar, ?YopVarTimed, ?YopIntegral}) YopVarGraph <
                     obj.lhs - obj.rhs, ...
                     zeros( size(obj.lhs.evaluate) ) ...
                     );                
+            end
+        end
+    end
+    
+    methods (Access=protected)
+        function cpObj = copyElement(obj)
+            cpObj = copyElement@matlab.mixin.Copyable(obj);
+            cpObj.Argument = cell(size(obj.Argument));
+            for k=1:length(obj.Argument)
+                cpObj.Argument{k} = copy(obj.Argument{k});
             end
         end
     end

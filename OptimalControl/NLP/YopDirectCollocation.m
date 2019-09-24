@@ -42,18 +42,18 @@ classdef YopDirectCollocation < handle
             J = J + ocp.getMayer(w.t(K+1,1), w.x(K+1,1), w.z(K,cc.d+1), w.u(K), w.p);
         end
         
-        function constraints = buildConstraints(obj, ocp, collocationCoefficients, nlpVariable)            
+        function constraints = buildConstraints(obj, ocp, collocationCoefficients, nlpVariable)
             cc = collocationCoefficients;
             w = nlpVariable;
-                        
+
             g = obj.Constraints;
-            
+
             g.initial(ocp.getInitial(w.t(1,1), w.x(1,1), w.z(1,1), w.u(1), w.p));
             
             K = obj.ControlIntervals;
             for k=1:K
                 
-                % z(k,1) är problem (radau-punkter vid DAE kan lösa)
+                % z(k,1) ï¿½r problem (radau-punkter vid DAE kan lï¿½sa)
                 g.path(ocp.getPath(w.t(k,1), w.x(k,1), w.z(k,1), w.u(k), w.p));
                 
                 for j=2:cc.d+1
