@@ -70,7 +70,7 @@ classdef (InferiorClasses = {?YopVar, ?YopVarTimed, ?YopIntegral}) YopVarGraph <
         function result = evaluate(obj)
             argument = cellfun(@(arg) evaluate(arg), obj.Argument, ...
                 'UniformOutput', false);
-            result = obj.Operation( argument{:} );
+            result = evaluate(obj.Operation( argument{:} ));
         end
         
         function n = numberOfNodes(obj)

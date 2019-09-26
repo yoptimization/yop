@@ -340,11 +340,9 @@ classdef YopVar < handle & matlab.mixin.Copyable
             b = YopVarGraph(@not, lhs, rhs);
         end
         
-        function s = sum(obj, varargin)
-            s = 0;
-            for k=1:length(varargin)
-                s = s + varargin{k}.Value;
-            end
+        function s = sum(x)
+            s = copy(x);
+            s.Value = sum(x.Value);
         end
     end
     
@@ -420,25 +418,19 @@ classdef YopVar < handle & matlab.mixin.Copyable
             end
         end
         
-        function res = nArgOperation(varargin)
-            
-        end
         
-        function varargout = convert(varargin)
-            varargout = varargin;
-            for k=1:length(varargin)
-                if isa(varargin{k}, 'YopVar')
-                    mold = varargin{k};
-                    break;
-                end
-            end            
-            for k=1:length(varargin)
-                if ~isa(varargin{k}, 'YopVar')
-                    tmp = copy(mold);
-                    tmp.Value = varargin{k};
-                    varargout{k} = tmp;                    
-                end
+        function [x, y] = convert(x, y)
+            if ~isa(x, 'YopVar')
+                tmp = copy(y);
+                tmp.Value = x;
+                x = tmp;
+                
+            elseif ~isa(y, 'YopVar')
+                tmp = copy(x);
+                tmp.Value = y;
+                y = tmp;
+                
             end
-        end 
+        end        
     end
 end

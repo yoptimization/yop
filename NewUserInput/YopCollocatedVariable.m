@@ -1,5 +1,4 @@
 classdef YopCollocatedVariable < YopCollocatedSignal
-    
     methods
         function obj = YopCollocatedVariable(label, dimension, degree, points, range)
             coefficients = [];

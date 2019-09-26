@@ -60,10 +60,10 @@ end
 % Dynamics
 for k=1:K
     if k==1
-        dxConstraint = dxFun(x(k).evaluate(tau(2:end)), u(k).evaluate(tau(2:end)));
+        dxConstraint = dxFun(x(k).evaluate(tau(2:end)), u(k).evaluate(tau(2:end))) - x(k).differentiate.evaluate(tau(2:end));
     
     else
-        dxConstraint = [dxConstraint, dxFun(x(k).evaluate(tau(2:end)), u(k).evaluate(tau(2:end)))];
+        dxConstraint = [dxConstraint, dxFun(x(k).evaluate(tau(2:end)), u(k).evaluate(tau(2:end))) - x(k).differentiate.evaluate(tau(2:end))];
         
     end
 end
@@ -72,7 +72,8 @@ end
 continuity = x(1:K).evaluate(1) - x(2:end).evaluate(0);
 
 % Objective
-Jargs = J.getInputArguments;
+Jdisc = copy(J);
+Jargs = Jdisc.getInputArguments;
 L = Jargs{2};
 Lfn = L.functionalize('L', xs, us);
 
@@ -89,14 +90,11 @@ for k=1:K
     end
 end
 
+L.Value = Ldisc.integrate.evaluate(1).sum;
+% Jdisc.evaluate
 
-
-
-
-
-
-
-
+% Variable bounds
+% x.getCoefficients
 
 
 

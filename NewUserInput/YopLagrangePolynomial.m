@@ -31,8 +31,11 @@ classdef YopLagrangePolynomial < handle & matlab.mixin.Copyable
             for n=1:length(tau)
                 value = 0;
                 for j=1:obj.degree+1
-                    value = value + ...
-                        polyval(obj.Basis(j,:), tau(n)) .* obj.Data.y(:,j);
+                    pv = polyval(obj.Basis(j,:), tau(n));
+                    newValue = pv .* obj.Data.y(:,j);
+                    value = value + newValue;
+                    %value = value + ...
+                    %    polyval(obj.Basis(j,:), tau(n)) .* obj.Data.y(:,j);
                 end
                 values = [values, value];
             end
