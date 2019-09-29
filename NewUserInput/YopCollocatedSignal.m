@@ -45,7 +45,7 @@ classdef YopCollocatedSignal < YopCollocationPolynomial
         end
         
         function bool = isInRange(obj, time)
-            bool = obj.t0-time <= 0 && obj.tf-time > 0;
+            bool = round((obj.t0-time)/eps)*eps <= 0 && obj.tf-time > 0;
         end
     end
 end

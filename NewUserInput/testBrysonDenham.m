@@ -7,6 +7,9 @@ us = YopVar.variable('u');
 [ode, cart] = trolleyModel(ts, xs, us);
 
 J = 1/2*integral(cart.acceleration^2);
+% J = 1000000*t_f( xs(1)^2 + (xs(2)+1)^2 ) + 1/2*integral(cart.acceleration^2);
+% j1 = t_i(1000000*(xs(1))^2, 0.3);
+% J = j1 + 1/2*integral(cart.acceleration^2);
 c1 = cart.position(t_0) == 0;
 c2 = cart.speed(t_0) == 1;
 c3 = cart.position(t_f) == 0;
@@ -20,12 +23,12 @@ dxFun = ode.functionalize('dx', xs, us);
 %%
 
 deg = 3;
-points = 'radau';
+points = 'legendre';
 tau = [0, casadi.collocation_points(deg, points)];
 
 t0 = 0;
 tf = 1;
-K = 10;
+K = 20;
 h = (tf-t0)/K;
 label = @(symbol, k, r) [symbol '_(' num2str(k) ',' num2str(r) ')'];
 
@@ -34,7 +37,7 @@ for k=1:K+1
     t = (k-1)*h;
     if k==1
         x = YopCollocatedVariable(@(r) label('x', k, r), nx, deg, points, [t, t+h]);
-    
+        
     elseif k == K+1
         x(k) = YopCollocatedVariable(@(r) label('x', k, r), nx, 0, points, [t, t]);
         
@@ -61,7 +64,7 @@ end
 for k=1:K
     if k==1
         dxConstraint = dxFun(x(k).evaluate(tau(2:end)), u(k).evaluate(tau(2:end))) - x(k).differentiate.evaluate(tau(2:end));
-    
+        
     else
         dxConstraint = [dxConstraint, dxFun(x(k).evaluate(tau(2:end)), u(k).evaluate(tau(2:end))) - x(k).differentiate.evaluate(tau(2:end))];
         
@@ -74,39 +77,120 @@ continuity = x(1:K).evaluate(1) - x(2:end).evaluate(0);
 % Objective
 Jdisc = copy(J);
 Jargs = Jdisc.getInputArguments;
-L = Jargs{2};
-Lfn = L.functionalize('L', xs, us);
 
-for k=1:K
-    t = (k-1)*h;
-    ck = [];    
-    for r=1:deg+1
-        ck = [ck, Lfn(x(k).evaluate(tau(r)), u(k).evaluate(tau(r)))];
-    end    
-    if k==1
-        Ldisc = YopCollocatedSignal(ck, deg, 'legendre', [t, t+h]);
-    else
-        Ldisc(k) = YopCollocatedSignal(ck, deg, 'legendre', [t, t+h]);
+for n=1:length(Jargs)
+    if isa(Jargs{n}, 'YopIntegral')
+        integrand = Jargs{n};
+        integrandFunction = integrand.functionalize('L', xs, us);
+        
+        for k=1:K
+            t = (k-1)*h;
+            coefficients = [];
+            for r=1:deg+1
+                x_kr = x(k).evaluate(tau(r));
+                u_kr = u(k).evaluate(tau(r));
+                coefficients = [coefficients, integrandFunction(x_kr, u_kr)];
+            end
+            if k==1
+                integrandPolynom = ...
+                    YopCollocatedSignal(coefficients, deg, 'legendre', [t, t+h]);
+            else
+                integrandPolynom(k) = ...
+                    YopCollocatedSignal(coefficients, deg, 'legendre', [t, t+h]);
+            end
+        end
+        integrand.replace(integrandPolynom.integrate.evaluate(1).sum);
+        
+        
+        % Timepoint
+    elseif isequal(Jargs{n}.Timepoint, YopVar.getIndependentInitial)
+        expression = Jargs{n};
+        expressionFunction = expression.functionalize('e_t0', xs, us);
+        x_t = x(1).evaluate(0);
+        u_t = u(1).evaluate(0);
+        expression.replace( expressionFunction(x_t, u_t) );
+        
+    elseif isequal(Jargs{n}.Timepoint, YopVar.getIndependentFinal)
+        expression = Jargs{n};
+        expressionFunction = expression.functionalize('e_tf', xs, us);
+        x_t = x(K+1).evaluate(1);
+        u_t = u(K).evaluate(1);
+        expression.replace( expressionFunction(x_t, u_t) );
+        
+    elseif ~isempty(Jargs{n}.Timepoint)
+        expression = Jargs{n};
+        expressionFunction = expression.functionalize('e_ti', xs, us);
+        x_t = x.evaluateAt(expression.Timepoint);
+        u_t = u.evaluateAt(expression.Timepoint);
+        expression.replace( expressionFunction(x_t, u_t) );
+        
+    elseif ~isempty(Jargs{n}.Index)
+        expression = Jargs{n};
+        expressionFunction = expression.functionalize('e_kr', xs, us);
+        x_kr = x(expression.Index.Segment).evaluate(tau(expression.Index.CollocationPoint));
+        u_kr = u(expression.Index.Segment).evaluate(tau(expression.Index.CollocationPoint));
+        expression.replace( expressionFunction(x_kr, u_kr) );
+        
     end
 end
 
-L.Value = Ldisc.integrate.evaluate(1).sum;
+%%
+
 % Jdisc.evaluate
 
 % Variable bounds
 % x.getCoefficients
 
+% w = [];
+% for k=1:K
+%     w = [w; x(k).getCoefficientVector; u(k).getCoefficientVector];
+% end
+% w = [w; x(K+1).getCoefficientVector];
 
+wx = x.getCoefficientVector;
+wu = u.getCoefficientVector;
 
+lbx = -inf(size(wx));
+ubx =  inf(size(wx));
+ubx(1:2:end) = 1/9;
+lbx(1:2) = [0; 1];
+ubx(1:2) = [0; 1];
+lbx(end-1:end) = [0; -1];
+ubx(end-1:end) = [0; -1];
 
+lbu = -inf(size(wu));
+ubu =  inf(size(wu));
 
+w = [wx; wu];
+lb = [lbx; lbu];
+ub = [ubx; ubu];
 
+g = [dxConstraint(:).evaluate; continuity(:).evaluate];
+glb = zeros(size(g));
+gub = zeros(size(g));
 
+nlp = struct;
+nlp.x = w.evaluate;
+nlp.f = Jdisc.evaluate;
+nlp.g = g;
+solver = casadi.nlpsol('S', 'ipopt', nlp);
+solution = solver('x0', zeros(size(w)), 'lbx', lb, 'ubx', ub, 'lbg', glb, 'ubg', gub);
 
+%%
+w = full(solution.x);
 
+x1_opt = w(1:((deg+1)*2):K*nx*(deg+1)+nx);
+x2_opt = w(2:((deg+1)*2):K*nx*(deg+1)+nx);
+u_opt = w(K*nx*(deg+1)+nx+1:end);
+u_opt(end+1) = u_opt(end);
 
-
-
+figure(1); 
+subplot(311); hold on;
+plot(linspace(0,1,K+1), x1_opt)
+subplot(312); hold on;
+plot(linspace(0,1,K+1), x2_opt)
+subplot(313); hold on;
+stairs(linspace(0,1,K+1), u_opt)
 
 
 

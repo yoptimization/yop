@@ -6,12 +6,24 @@ classdef YopVar < handle & matlab.mixin.Copyable
         Index
     end
     
-    methods   
+    methods
         function obj = YopVar(expression, timepoint)
             obj.Value = expression;
             if nargin == 2
                 obj.Timepoint = timepoint;
             end
+        end
+        
+        function obj = t_0(obj)
+            obj.Timepoint = YopVar.getIndependentInitial;
+        end
+        
+        function obj = t_f(obj)
+            obj.Timepoint = YopVar.getIndependentFinal;
+        end
+        
+        function obj = t_i(obj, ti)
+            obj.Timepoint = ti;
         end
         
         function v = value(obj)
@@ -53,9 +65,13 @@ classdef YopVar < handle & matlab.mixin.Copyable
         function functionObject = functionalize(obj, name, varargin)
             functionObject = YopFunction.constructor(obj, name, varargin);
         end
+        
+        function obj = replace(obj, newValue)
+            obj.Value = newValue.Value;
+        end
     end
     
-    methods % YopVar/-Graph Interface        
+    methods % YopVar/-Graph Interface
         function bool = areEqual(x, y)
             if isequal(class(x), class(y))
                 bool = isequal(x.Timepoint, y.Timepoint);
@@ -92,7 +108,7 @@ classdef YopVar < handle & matlab.mixin.Copyable
         
         function bool = isaExpression(obj)
             bool = true;
-        end            
+        end
         
         function bool = isaRelation(obj)
             bool = false;
@@ -173,7 +189,7 @@ classdef YopVar < handle & matlab.mixin.Copyable
                 if narg ~= 1 && length(s) == 2
                     varargout{1} = obj.(s(1).subs)(s(2).subs{:});
                     
-                elseif narg ~= 1 
+                elseif narg ~= 1
                     varargout{1} = subsref(obj.(s(1).subs)(s(2).subs{:}), s(3:end));
                     
                 else
@@ -183,14 +199,14 @@ classdef YopVar < handle & matlab.mixin.Copyable
                 
             elseif strcmp(s(1).type, '.') && length(s) > 1 && isprop(obj, s(1).subs)
                 varargout{1} = subsref(obj.(s(1).subs), s(2:end));
-            
-            elseif strcmp(s.type, '()') && isIndependentInitial(s.subs{1})
-                 obj.Timepoint = YopVar.getIndependentInitial.Value;
-                 varargout{1} = obj;
                 
-            elseif strcmp(s.type, '()') && isIndependentFinal(s.subs{1})                
+            elseif strcmp(s.type, '()') && isIndependentInitial(s.subs{1})
+                obj.Timepoint = YopVar.getIndependentInitial.Value;
+                varargout{1} = obj;
+                
+            elseif strcmp(s.type, '()') && isIndependentFinal(s.subs{1})
                 obj.Timepoint = YopVar.getIndependentFinal.Value;
-                varargout{1} = obj;                
+                varargout{1} = obj;
                 
             elseif strcmp(s.type, '()') && isa(s.subs{1}, 'YopTimepoint')
                 varargout{1} = YopVar(obj.Value, s.subs{1}.Timepoint);
@@ -209,7 +225,7 @@ classdef YopVar < handle & matlab.mixin.Copyable
             end
         end
         
-        function x = subsasgn(x, s, y)                            
+        function x = subsasgn(x, s, y)
             if strcmp(s.type, '()')
                 expr = x.Value;
                 expr(s.subs{:}) = y;
@@ -222,9 +238,9 @@ classdef YopVar < handle & matlab.mixin.Copyable
                 x.(s.subs) = y;
                 
             end
-        end     
+        end
     end
-        
+    
     methods % Math
         function y = integral(x)
             y = YopIntegral(x.Value);
@@ -266,7 +282,7 @@ classdef YopVar < handle & matlab.mixin.Copyable
         
         function z = ldivide(x, y)
             z = YopVar.twoArgOperation(x, y, @ldivide);
-        end        
+        end
         
         function z = mrdivide(x, y)
             z = YopVar.twoArgOperation(x, y, @mrdivide);
@@ -277,12 +293,12 @@ classdef YopVar < handle & matlab.mixin.Copyable
         end
         
         function z = power(x, y)
-           z = YopVar.twoArgOperation(x, y, @power); 
+            z = YopVar.twoArgOperation(x, y, @power);
         end
         
         function z = mpower(x, y)
-           z = YopVar.twoArgOperation(x, y, @mpower); 
-        end  
+            z = YopVar.twoArgOperation(x, y, @mpower);
+        end
         
         function y = exp(x)
             y = copy(x);
@@ -361,9 +377,9 @@ classdef YopVar < handle & matlab.mixin.Copyable
             ip.parse(varargin{:});
             
             v = YopVar(casadi.MX.sym( ...
-                  ip.Results.symbol, ...
-                  ip.Results.rows, ...
-                  ip.Results.columns ...
+                ip.Results.symbol, ...
+                ip.Results.rows, ...
+                ip.Results.columns ...
                 ));
         end
         
@@ -393,21 +409,15 @@ classdef YopVar < handle & matlab.mixin.Copyable
             end
             t = independent;
         end
-
+        
     end
     
-    methods(Static)
-        function varargout = con(varargin)
-            [varargout{1:nargout}] = YopVar.convert(varargin{:});
-        end
-    end
-    
-    methods (Static, Access=private)        
+    methods (Static, Access=private)
         function res = twoArgOperation(x, y, op)
             [x, y] = YopVar.convert(x, y);
             
-            if areEqual(x, y) 
-                % Note! This means that some derived classes need to 
+            if areEqual(x, y)
+                % Note! This means that some derived classes need to
                 % specify YopVar as inferior and overload areEqual
                 res = copy(x);
                 res.Value = op(x.Value, y.Value);
@@ -418,19 +428,24 @@ classdef YopVar < handle & matlab.mixin.Copyable
             end
         end
         
-        
-        function [x, y] = convert(x, y)
-            if ~isa(x, 'YopVar')
-                tmp = copy(y);
-                tmp.Value = x;
-                x = tmp;
-                
-            elseif ~isa(y, 'YopVar')
-                tmp = copy(x);
-                tmp.Value = y;
-                y = tmp;
-                
+        function varargout = convert(varargin)
+            varargout = varargin;
+            for k=1:length(varargin)
+                if isa(varargin{k}, 'YopVar')
+                    mold = varargin{k};
+                    break;
+                end
             end
-        end        
+            for k=1:length(varargin)
+                if ~isa(varargin{k}, 'YopVar') && isa(mold, 'YopIntegral')
+                    varargout{k} = YopVar(varargin{k});
+                    
+                elseif ~isa(varargin{k}, 'YopVar')
+                    tmp = copy(mold);
+                    tmp.Value = varargin{k};
+                    varargout{k} = tmp;
+                end
+            end
+        end
     end
 end

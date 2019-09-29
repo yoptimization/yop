@@ -1,4 +1,4 @@
-classdef (InferiorClasses = {?YopVar, ?YopVarTimed, ?YopIntegral}) YopVarGraph < handle & matlab.mixin.Copyable
+classdef (InferiorClasses = {?YopVar, ?YopIntegral}) YopVarGraph < handle & matlab.mixin.Copyable
     
     properties
         Operation
@@ -70,7 +70,7 @@ classdef (InferiorClasses = {?YopVar, ?YopVarTimed, ?YopIntegral}) YopVarGraph <
         function result = evaluate(obj)
             argument = cellfun(@(arg) evaluate(arg), obj.Argument, ...
                 'UniformOutput', false);
-            result = evaluate(obj.Operation( argument{:} ));
+            result = obj.Operation( argument{:} );
         end
         
         function n = numberOfNodes(obj)
