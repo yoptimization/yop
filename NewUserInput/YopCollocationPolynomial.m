@@ -45,7 +45,7 @@ classdef YopCollocationPolynomial < YopLagrangePolynomial
     methods (Static)        
         function tau = collocationPoints(degree, points)
             if degree >= 1
-                tau = [0 casadi.collocation_points(degree, points)];
+                tau = [0 double(casadi.collocation_points(degree, points))];
             else
                 tau = 0;
             end

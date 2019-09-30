@@ -97,6 +97,14 @@ classdef (InferiorClasses = {?YopVar, ?YopIntegral}) YopVarGraph < handle & matl
                 args = [args(:); getInputArguments(obj.Argument{k})];
             end
         end
+        
+        function bool = dependsOn(obj, variable)
+            obj.disp
+            bool = false;
+            for k=1:length(obj.Argument)
+                bool = dependsOn(obj.Argument{k}, variable) || bool;
+            end
+        end
     end
     
     methods % Math

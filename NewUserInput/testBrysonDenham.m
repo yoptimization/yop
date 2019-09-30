@@ -1,14 +1,16 @@
 nx = 2;
 nu = 1;
 ts = YopVar.variable('t');
-xs = YopVar.variable('x', nx);
+xs1 = YopVar.variable('x1', 1);
+xs2 = YopVar.variable('x2', 1);
+xs = [xs1; xs2];
 us = YopVar.variable('u');
 
 [ode, cart] = trolleyModel(ts, xs, us);
 
 J = 1/2*integral(cart.acceleration^2);
 % J = 1000000*t_f( xs(1)^2 + (xs(2)+1)^2 ) + 1/2*integral(cart.acceleration^2);
-% j1 = t_i(1000000*(xs(1))^2, 0.3);
+% j1 = 1000000*t_i( xs(1)^2, 0.3 );
 % J = j1 + 1/2*integral(cart.acceleration^2);
 c1 = cart.position(t_0) == 0;
 c2 = cart.speed(t_0) == 1;
@@ -17,14 +19,24 @@ c4 = cart.speed(t_f) == 1;
 c5 = cart.position <= 1/9;
 c6 = 0 == t_0 <= t_f == 1;
 
+constraints = [c1, c2, c3, c4, c5, c6];
+
 % JFun = J.function
 dxFun = ode.functionalize('dx', xs, us);
+
+%%
+c1nlp = c1.unnestRelations;
+c1nlp.isaBox
+
+% Vilken variabel gäller det?
+
+% Implementera gränsen för den variabeln beroende på <=, ==, >=
 
 %%
 
 deg = 3;
 points = 'legendre';
-tau = [0, casadi.collocation_points(deg, points)];
+tau = [0, double(casadi.collocation_points(deg, points))];
 
 t0 = 0;
 tf = 1;
@@ -62,11 +74,15 @@ end
 
 % Dynamics
 for k=1:K
-    if k==1
-        dxConstraint = dxFun(x(k).evaluate(tau(2:end)), u(k).evaluate(tau(2:end))) - x(k).differentiate.evaluate(tau(2:end));
+    xk = x(k).evaluate(tau(2:end));
+    dxk = x(k).differentiate.evaluate(tau(2:end));
+    uk = u(k).evaluate(tau(2:end));
+    
+    if k==1                
+        dxConstraint = dxFun(xk, uk) - dxk;
         
     else
-        dxConstraint = [dxConstraint, dxFun(x(k).evaluate(tau(2:end)), u(k).evaluate(tau(2:end))) - x(k).differentiate.evaluate(tau(2:end))];
+        dxConstraint = [dxConstraint, dxFun(xk, uk) - dxk];
         
     end
 end
@@ -133,6 +149,29 @@ for n=1:length(Jargs)
         
     end
 end
+
+% Constraints
+state = xs;
+control = us;
+
+for n=1:length(constraints)
+    c_n = constraints(n).unnestRelations;
+    for k=1:length(c_n)
+        if c_n(k).isaBox
+            if c_n(k).dependsOn(state)
+                
+            elseif c_n(k).dependsOn(control)
+                
+            end
+            
+        else
+            c_nk_nlp = c_n(k).setToNlpForm;
+            % Arbitrary constraint, including integral och derivative
+            
+        end
+    end
+end
+
 
 %%
 

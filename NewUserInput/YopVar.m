@@ -58,16 +58,16 @@ classdef YopVar < handle & matlab.mixin.Copyable
             bool = isnumeric(obj.Value);
         end
         
-        function val = evaluateAtTimepoint(obj, timepoint, nlpVariables)
-            
-        end
-        
         function functionObject = functionalize(obj, name, varargin)
             functionObject = YopFunction.constructor(obj, name, varargin);
         end
         
         function obj = replace(obj, newValue)
             obj.Value = newValue.Value;
+        end
+        
+        function bool = dependsOn(obj, variable)
+            bool = depends_on(obj.evaluate, evaluate(variable));
         end
     end
     
@@ -201,11 +201,11 @@ classdef YopVar < handle & matlab.mixin.Copyable
                 varargout{1} = subsref(obj.(s(1).subs), s(2:end));
                 
             elseif strcmp(s.type, '()') && isIndependentInitial(s.subs{1})
-                obj.Timepoint = YopVar.getIndependentInitial.Value;
+                obj.Timepoint = YopVar.getIndependentInitial;
                 varargout{1} = obj;
                 
             elseif strcmp(s.type, '()') && isIndependentFinal(s.subs{1})
-                obj.Timepoint = YopVar.getIndependentFinal.Value;
+                obj.Timepoint = YopVar.getIndependentFinal;
                 varargout{1} = obj;
                 
             elseif strcmp(s.type, '()') && isa(s.subs{1}, 'YopTimepoint')
