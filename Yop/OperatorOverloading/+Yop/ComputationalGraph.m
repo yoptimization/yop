@@ -1,26 +1,40 @@
-classdef (InferiorClasses = {?YopVar, ?YopIntegral}) YopVarGraph < handle & matlab.mixin.Copyable
+classdef (InferiorClasses = {?Yop.Variable}) ComputationalGraph < Yop.MathOperations & matlab.mixin.Copyable
     
     properties
         Operation
         Argument
+        Timepoint
     end
     
     methods % Class
-        function obj = YopVarGraph(operation, varargin)
+        function obj = ComputationalGraph(operation, varargin)
             obj.Operation = operation;
-            obj.Argument = YopVarGraph.convert(varargin);            
-        end       
+            obj.Argument = varargin;
+        end
         
-        function bool = isaRelation(obj)
-            bool = YopVarGraph.isRelationOperation(obj.Operation);
+        function bool = nodeIsaRelation(obj)
+            bool = ...
+                isequal(obj.Operation, @lt) || ...
+                isequal(obj.Operation, @gt) || ...
+                isequal(obj.Operation, @le) || ...
+                isequal(obj.Operation, @ge) || ...
+                isequal(obj.Operation, @ne) || ...
+                isequal(obj.Operation, @eq);
         end        
         
-        function bool = isaExpression(obj)
+        function bool = graphIsaExpression(obj)
             bool = true;
-            operations = obj.getOperations;
-            for k=1:length(operations)
-               bool = bool & ~YopVarGraph.isRelationOperation(operations{k});
+            for k=1:length(obj.Argument)
+                bool = bool && ...
+                    ~nodeIsaRelation(obj.Argument{k}) && ...
+                    graphIsaExpression(obj.Argument{k});
             end
+            
+            % Bör ändras till att rekursivt fråga om nodeIsaRelation
+%             operations = obj.getOperations;
+%             for k=1:length(operations)
+%                bool = bool & ~YopComputationalGraph.isRelationOperation(operations{k});
+%             end
         end
         
         function bool = isaVariable(obj)
@@ -41,7 +55,7 @@ classdef (InferiorClasses = {?YopVar, ?YopIntegral}) YopVarGraph < handle & matl
         
         function disp(obj)
             for k=1:length(obj)
-                disp(obj(k).evaluate);
+                disp(obj(k).evaluateComputation);
             end
         end
         
@@ -53,9 +67,9 @@ classdef (InferiorClasses = {?YopVar, ?YopIntegral}) YopVarGraph < handle & matl
             elements = [];
             for k=1:length(obj)
                 if r > c
-                    elements = [elements; obj(k).evaluate];
+                    elements = [elements; obj(k).evaluateComputation];
                 else
-                    elements = [elements, obj(k).evaluate];
+                    elements = [elements, obj(k).evaluateComputation];
                 end
             end
             eval([inputname(1) '= elements']);
@@ -67,9 +81,12 @@ classdef (InferiorClasses = {?YopVar, ?YopIntegral}) YopVarGraph < handle & matl
             bool = false;
         end
         
-        function result = evaluate(obj)
-            argument = cellfun(@(arg) evaluate(arg), obj.Argument, ...
-                'UniformOutput', false);
+        function result = evaluateComputation(obj)
+            argument = cellfun( ...
+                @(arg) evaluateComputation(arg), ...
+                obj.Argument, ...
+                'UniformOutput', false ...
+                );
             result = obj.Operation( argument{:} );
         end
         
@@ -105,84 +122,6 @@ classdef (InferiorClasses = {?YopVar, ?YopIntegral}) YopVarGraph < handle & matl
                 bool = dependsOn(obj.Argument{k}, variable) || bool;
             end
         end
-    end
-    
-    methods % Math
-        function z = plus(x, y)
-            z = YopVarGraph(@plus, x, y);
-        end
-        
-        function z = minus(x, y)
-            z = YopVarGraph(@minus, x, y);
-        end
-        
-        function y = uplus(x)
-            y = YopVarGraph(@uplus, x);            
-        end
-        
-        function y = uminus(x)
-            y = YopVarGraph(@uminus, x);
-        end
-        
-        function z = times(x, y)
-            z = YopVarGraph(@times, x, y);
-        end
-        
-        function z = mtimes(x, y)
-            z = YopVarGraph(@mtimes, x, y);
-        end
-        
-        function z = rdivide(x, y)
-            z = YopVarGraph(@rdivide, x, y);
-        end
-        
-        function z = ldivide(x, y)
-            z = YopVarGraph(@ldivide, x, y);
-        end        
-        
-        function z = power(x, y)
-           z = YopVarGraph(@power, x, y);
-        end
-        
-        function z = mpower(x, y)
-           z = YopVarGraph(@mpower, x, y);
-        end    
-        
-        function r = lt(lhs, rhs)
-            r = YopVarGraph(@lt, lhs, rhs);
-        end
-        
-        function r = gt(lhs, rhs)
-            r = YopVarGraph(@gt, lhs, rhs);
-        end
-        
-        function r = le(lhs, rhs)
-            r = YopVarGraph(@le, lhs, rhs);
-        end
-        
-        function r = ge(lhs, rhs)
-            r = YopVarGraph(@ge, lhs, rhs);
-        end
-        
-        function r = ne(lhs, rhs)
-            r = YopVarGraph(@ne, lhs, rhs);
-        end
-        
-        function r = eq(lhs, rhs)
-            r = YopVarGraph(@eq, lhs, rhs);
-        end
-        
-        function b = and(lhs, rhs)
-            b = YopVarGraph(@and, lhs, rhs);
-        end
-        
-        function b = or(lhs, rhs)
-            b = YopVarGraph(@or, lhs, rhs);
-        end
-        
-        function b = not(lhs, rhs)
-            b = YopVarGraph(@not, lhs, rhs);
-        end            
     end
     
     methods % Graph interpretation and modification                
@@ -245,7 +184,7 @@ classdef (InferiorClasses = {?YopVar, ?YopIntegral}) YopVarGraph < handle & matl
         end
         
         function l = leftmostExpression(obj)
-            if obj.isaExpression
+            if obj.graphIsaExpression
                 l = obj;                
             else
                 l = leftmostExpression(obj.lhs);
@@ -253,7 +192,7 @@ classdef (InferiorClasses = {?YopVar, ?YopIntegral}) YopVarGraph < handle & matl
         end
         
         function r = rightmostExpression(obj)
-            if obj.isaExpression
+            if obj.graphIsaExpression
                 r = obj;
             else
                 r = rightmostExpression(obj.rhs);                
@@ -274,25 +213,25 @@ classdef (InferiorClasses = {?YopVar, ?YopIntegral}) YopVarGraph < handle & matl
                     graph = [graph; obj(k).unnestRelations];
                 end
                 
-            elseif obj.lhs.isaExpression && obj.rhs.isaExpression
+            elseif obj.lhs.graphIsaExpression && obj.rhs.graphIsaExpression
                 graph = obj;
                 
-            elseif obj.lhs.isaExpression && obj.rhs.isaRelation
+            elseif obj.lhs.graphIsaExpression && obj.rhs.nodeIsaRelation
                 graph = [ ...
-                    YopVarGraph(obj.Operation, obj.lhs, leftmostExpression(obj.rhs)); ...
+                    Yop.ComputationalGraph(obj.Operation, obj.lhs, leftmostExpression(obj.rhs)); ...
                     unnestRelations(obj.rhs) ...
                     ];
                 
-            elseif obj.lhs.isaRelation && obj.rhs.isaExpression
+            elseif obj.lhs.nodeIsaRelation && obj.rhs.graphIsaExpression
                 graph = [ ...
                     unnestRelations(obj.lhs); ...
-                    YopVarGraph(obj.Operation, rightmostExpression(obj.lhs), obj.rhs) ...                    
+                    Yop.ComputationalGraph(obj.Operation, rightmostExpression(obj.lhs), obj.rhs) ...                    
                     ];
                 
-            elseif obj.lhs.isaRelation && obj.rhs.isaRelation
+            elseif obj.lhs.nodeIsaRelation && obj.rhs.nodeIsaRelation
                 graph = [ ...
                     unnestRelations(obj.lhs); ...
-                    YopVarGraph(obj.Operation, rightmostExpression(obj.lhs), leftmostExpression(obj.rhs)); ...
+                    Yop.ComputationalGraph(obj.Operation, rightmostExpression(obj.lhs), leftmostExpression(obj.rhs)); ...
                     unnestRelations(obj.rhs) ...
                     ];                
             end   
@@ -312,24 +251,24 @@ classdef (InferiorClasses = {?YopVar, ?YopIntegral}) YopVarGraph < handle & matl
                 end
             
             elseif isequal(obj.Operation, @lt) || isequal(obj.Operation, @le)
-                nlpForm = YopVarGraph( ...
+                nlpForm = Yop.ComputationalGraph( ...
                     @le, ...
                     obj.lhs - obj.rhs, ...
-                    zeros( size(obj.lhs.evaluate) ) ...
+                    zeros( size(obj.lhs.evaluateComputation) ) ...
                     );
                 
             elseif isequal(obj.Operation, @gt) || isequal(obj.Operation, @ge)
-                nlpForm = YopVarGraph( ...
+                nlpForm = Yop.ComputationalGraph( ...
                     @le, ...
                     obj.rhs - obj.lhs, ...
-                    zeros( size(obj.lhs.evaluate) ) ...
+                    zeros( size(obj.lhs.evaluateComputation) ) ...
                     );                
                 
             elseif isequal(obj.Operation, @eq)
-                nlpForm = YopVarGraph( ...
+                nlpForm = Yop.ComputationalGraph( ...
                     @eq, ...
                     obj.lhs - obj.rhs, ...
-                    zeros( size(obj.lhs.evaluate) ) ...
+                    zeros( size(obj.lhs.evaluateComputation) ) ...
                     );                
             end
         end
@@ -348,7 +287,7 @@ classdef (InferiorClasses = {?YopVar, ?YopIntegral}) YopVarGraph < handle & matl
     methods (Static)
         function args = convert(args)
             for k=1:length(args)
-                if ~isa(args{k}, 'YopVar') && ~isa(args{k}, 'YopVarGraph')
+                if ~isa(args{k}, 'Yop.Expression') && ~isa(args{k}, 'Yop.ComputationalGraph')
                     args{k} = YopVar(args{k});
                 end
             end

@@ -1,28 +1,61 @@
+import Yop.*
+
 nx = 2;
 nu = 1;
-ts = YopVar.variable('t');
-xs1 = YopVar.variable('x1', 1);
-xs2 = YopVar.variable('x2', 1);
+ts = variable('t');
+xs1 = variable('x1', 1);
+xs2 = variable('x2', 1);
 xs = [xs1; xs2];
-us = YopVar.variable('u');
+us = variable('u');
 
 [ode, cart] = trolleyModel(ts, xs, us);
 
-J = 1/2*yopIntegral(cart.acceleration^2);
+J = 1/2*integral(cart.acceleration^2);
 % J = 1000000*t_f( xs(1)^2 + (xs(2)+1)^2 ) + 1/2*integral(cart.acceleration^2);
 % j1 = 1000000*t_i( xs(1)^2, 0.3 );
 % J = j1 + 1/2*integral(cart.acceleration^2);
-c1 = cart.position(t_0) == 0;
-c2 = cart.speed(t_0) == 1;
-c3 = cart.position(t_f) == 0;
-c4 = cart.speed(t_f) == 1;
+c1 = cart.position(t0) == 0;
+c2 = cart.speed(t0) == 1;
+c3 = cart.position(tf) == 0;
+c4 = cart.speed(tf) == 1;
 c5 = cart.position <= 1/9;
-c6 = 0 == t_0 <= t_f == 1;
+c6 = 0 == t0 <= tf == 1;
 
 constraints = [c1, c2, c3, c4, c5, c6];
 
-% JFun = J.function
-% dxFun = ode.functionalize('dx', xs, us);
+
+%%
+
+t = variable('t');
+x = variable('x', 2);
+u = variable('u');
+[ode, cart] = trolleyModel(ts, xs, us);
+
+ocp = optimalControlProblem('states',  x, 'controls', u);
+
+ocp.minimize( 1/2*integral(cart.acceleration^2) );
+
+ocp.subjectTo( ...
+    dot(x) == ode, ...
+    cart.position(t0) == 0, ...
+    cart.speed(t0) == 1, ...
+    cart.position(tf) == 0, ...
+    cart.speed(tf) == 1, ...
+    cart.position <= 1/9, ...
+    0 == t0 <= tf == 1 ...
+    );
+
+res=ocp.solve('directCollocation', 'segements', 100, 'points', 'legendre');
+
+figure(1)
+subplot(211)
+res.plot(t, x(1));
+subplot(212)
+res.plot(t, x(2));
+
+figure(2)
+res.plot(t, u);
+
 
 %%
 c1nlp = c1.unnestRelations;
