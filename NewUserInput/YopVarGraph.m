@@ -231,15 +231,15 @@ classdef (InferiorClasses = {?YopVar, ?YopIntegral}) YopVarGraph < handle & matl
             end
         end
         
-        function ub = getLowerBound(obj)
-            ub = [];
+        function lb = getLowerBound(obj)
+            lb = [];
             if obj.isaLowerBound && ...
                     (isequal(obj.Operation, @gt) || isequal(obj.Operation, @ge))
-                ub = obj.rhs;
+                lb = obj.rhs;
                 
             elseif obj.isaLowerBound && ...
                     (isequal(obj.Operation, @lt) || isequal(obj.Operation, @le))
-                ub = obj.lhs;
+                lb = obj.lhs;
                 
             end
         end
@@ -299,34 +299,34 @@ classdef (InferiorClasses = {?YopVar, ?YopIntegral}) YopVarGraph < handle & matl
             
         end
         
-        function constraint = setToNlpForm(obj)
+        function nlpForm = setToNlpForm(obj)
             % Sets an unnested graph to the following form.
             % h(x) <= 0
             % g(x) == 0
             % Presumes the graph has been unnested
             
             if length(obj) > 1
-                constraint = [];
+                nlpForm = [];
                 for k=1:length(obj)
-                    constraint = [constraint; obj(k).setToNlpForm];
+                    nlpForm = [nlpForm; obj(k).setToNlpForm];
                 end
             
             elseif isequal(obj.Operation, @lt) || isequal(obj.Operation, @le)
-                constraint = YopVarGraph( ...
+                nlpForm = YopVarGraph( ...
                     @le, ...
                     obj.lhs - obj.rhs, ...
                     zeros( size(obj.lhs.evaluate) ) ...
                     );
                 
             elseif isequal(obj.Operation, @gt) || isequal(obj.Operation, @ge)
-                constraint = YopVarGraph( ...
+                nlpForm = YopVarGraph( ...
                     @le, ...
                     obj.rhs - obj.lhs, ...
                     zeros( size(obj.lhs.evaluate) ) ...
                     );                
                 
             elseif isequal(obj.Operation, @eq)
-                constraint = YopVarGraph( ...
+                nlpForm = YopVarGraph( ...
                     @eq, ...
                     obj.lhs - obj.rhs, ...
                     zeros( size(obj.lhs.evaluate) ) ...
