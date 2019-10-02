@@ -23,7 +23,6 @@ c6 = 0 == t0 <= tf == 1;
 
 constraints = [c1, c2, c3, c4, c5, c6];
 
-
 %%
 
 t = variable('t');
@@ -55,7 +54,6 @@ res.plot(t, x(2));
 
 figure(2)
 res.plot(t, u);
-
 
 %%
 c1nlp = c1.unnestRelations;

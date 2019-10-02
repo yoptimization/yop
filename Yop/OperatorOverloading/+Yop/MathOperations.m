@@ -1,11 +1,11 @@
 classdef MathOperations < handle
     methods
-        function y = yopIntegral(x, varargin)
-            y = Yop.ComputationalGraph(@Yop.integrate, x, varargin{:});
+        function y = integral(x, varargin)
+            y = Yop.ComputationalGraph(@integral, x, varargin{:});
         end
         
-        function y = yopIntegrate(x, varargin)
-            y = yopIntegral(x, varargin{:});
+        function y = integrate(x, varargin)
+            y = integral(x, varargin{:});
         end
         
         function y = derivative(x, varargin)
@@ -118,6 +118,6 @@ classdef MathOperations < handle
         
         function s = sum(x)
             s = Yop.ComputationalGraph(@sum, x);
-        end
+        end        
     end
 end

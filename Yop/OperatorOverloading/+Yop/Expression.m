@@ -1,4 +1,4 @@
-classdef Expression < Yop.MathOperations & matlab.mixin.Copyable
+classdef Expression < Yop.MathOperations & Yop.OperatorOverloading & matlab.mixin.Copyable
     
     properties
         Value
@@ -30,13 +30,13 @@ classdef Expression < Yop.MathOperations & matlab.mixin.Copyable
             v = obj.Value;
         end
         
-        function disp(obj)
-            disp(obj.Value);
-        end
-        
-        function display(obj)
-            eval([inputname(1) '= obj.Value']);
-        end
+%         function disp(obj)
+%             disp(obj.Value);
+%         end
+%         
+%         function display(obj)
+%             eval([inputname(1) '= obj.Value']);
+%         end
         
         function bool = isIndependentInitial(obj)
             bool = isequal(obj, Yop.getIndependentInitial);
@@ -47,11 +47,7 @@ classdef Expression < Yop.MathOperations & matlab.mixin.Copyable
         end
         
         function bool = isaVariable(obj)
-            try
-                bool = is_valid_input(obj.Value);
-            catch
-                bool = false;
-            end
+            bool = ~isnumeric(obj);
         end
         
         function bool = isnumeric(obj)
@@ -63,6 +59,7 @@ classdef Expression < Yop.MathOperations & matlab.mixin.Copyable
         end
         
         function bool = dependsOn(obj, variable)
+            % Kan vi hitta den här variabeln i den här grafen?    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!            
             bool = depends_on(obj.evaluateComputation, evaluateComputation(variable));
         end
     end
@@ -136,31 +133,7 @@ classdef Expression < Yop.MathOperations & matlab.mixin.Copyable
             else
                 ind = prod(szd(k:end));
             end
-        end
-        
-        function x = horzcat(varargin)
-            vector = [];
-            for k=1:length(varargin)
-                elem = varargin{k};
-                if ~isempty(elem)
-                    vector = horzcat(vector, elem.Value);
-                end
-            end
-            x = copy(elem);
-            x.Value = vector;
-        end
-        
-        function x = vertcat(varargin)
-            vector = [];
-            for k=1:length(varargin)
-                elem = varargin{k};
-                if ~isempty(elem)
-                    vector = vertcat(vector, elem.Value);
-                end
-            end
-            x = copy(elem);
-            x.Value = vector;
-        end
+        end      
         
         function varargout = subsref(obj, s)
             
@@ -233,8 +206,4 @@ classdef Expression < Yop.MathOperations & matlab.mixin.Copyable
         end
     end
     
-    methods % Overloaded math
-        function obj = integral(obj)
-        end        
-    end
 end

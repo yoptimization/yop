@@ -1,4 +1,4 @@
-classdef (InferiorClasses = {?Yop.Variable}) ComputationalGraph < Yop.MathOperations & matlab.mixin.Copyable
+classdef (InferiorClasses = {?Yop.Variable}) ComputationalGraph < Yop.MathOperations & Yop.OperatorOverloading & matlab.mixin.Copyable
     
     properties
         Operation
@@ -8,7 +8,12 @@ classdef (InferiorClasses = {?Yop.Variable}) ComputationalGraph < Yop.MathOperat
     
     methods % Class
         function obj = ComputationalGraph(operation, varargin)
-            obj.Operation = operation;
+            for k=1:length(varargin)
+                if ~isa(varargin{k}, 'Yop.Expression') && ~isa(varargin{k}, 'Yop.ComputationalGraph')
+                    varargin{k} = Yop.Expression(varargin{k});
+                end
+            end
+            obj.Operation = operation;           
             obj.Argument = varargin;
         end
         
@@ -29,20 +34,23 @@ classdef (InferiorClasses = {?Yop.Variable}) ComputationalGraph < Yop.MathOperat
                     ~nodeIsaRelation(obj.Argument{k}) && ...
                     graphIsaExpression(obj.Argument{k});
             end
-            
-            % Bör ändras till att rekursivt fråga om nodeIsaRelation
-%             operations = obj.getOperations;
-%             for k=1:length(operations)
-%                bool = bool & ~YopComputationalGraph.isRelationOperation(operations{k});
-%             end
         end
         
-        function bool = isaVariable(obj)
-            bool = false;
+        function bool = isaVariable(obj)      
+            % Finns inga matteoperationer och är noder inte numeriska
+            bool = ~ismethod(Yop.MathOperations, func2str(obj.Operation));
+            k = 1;
+            while k <= length(obj.Argument) && bool
+                bool = isaVariable(obj.Argument{k});
+                k = k+1;
+            end
         end
         
         function bool = isnumeric(obj)
-            bool = false;
+            bool = true;
+            for k=1:length(obj.Argument)
+                bool = bool && isnumeric(obj.Argument{k});
+            end
         end
         
         function l = lhs(obj)
@@ -53,27 +61,27 @@ classdef (InferiorClasses = {?Yop.Variable}) ComputationalGraph < Yop.MathOperat
             r = obj.Argument{2};
         end
         
-        function disp(obj)
-            for k=1:length(obj)
-                disp(obj(k).evaluateComputation);
-            end
-        end
-        
-        function display(obj)
-            % Bygga något eget rekursivt? om funktionsnamnet är förknippat
-            % med en operation med egen symbol byt till symbolen annars
-            % skriv ut namnet.
-            [r, c] = size(obj);
-            elements = [];
-            for k=1:length(obj)
-                if r > c
-                    elements = [elements; obj(k).evaluateComputation];
-                else
-                    elements = [elements, obj(k).evaluateComputation];
-                end
-            end
-            eval([inputname(1) '= elements']);
-        end
+%         function disp(obj)
+%             for k=1:length(obj)
+%                 disp(obj(k).evaluateComputation);
+%             end
+%         end
+%         
+%         function display(obj)
+%             % Bygga något eget rekursivt? om funktionsnamnet är förknippat
+%             % med en operation med egen symbol byt till symbolen annars
+%             % skriv ut namnet.
+%             [r, c] = size(obj);
+%             elements = [];
+%             for k=1:length(obj)
+%                 if r > c
+%                     elements = [elements; obj(k).evaluateComputation];
+%                 else
+%                     elements = [elements, obj(k).evaluateComputation];
+%                 end
+%             end
+%             eval([inputname(1) '= elements']);
+%         end
     end
     
     methods % YopVar/-Graph Interface        
@@ -82,12 +90,18 @@ classdef (InferiorClasses = {?Yop.Variable}) ComputationalGraph < Yop.MathOperat
         end
         
         function result = evaluateComputation(obj)
-            argument = cellfun( ...
-                @(arg) evaluateComputation(arg), ...
-                obj.Argument, ...
-                'UniformOutput', false ...
-                );
-            result = obj.Operation( argument{:} );
+            argument = {};
+            for k=1:length(obj.Argument)
+                argument = {argument{:}, evaluateComputation(obj.Argument{k})};
+            end
+            
+            exceptions = Yop.FunctionException.getExceptions;
+            if exceptions.isaException(obj.Operation)
+                substitute = exceptions.getSubstitute(obj.Operation);                                        
+                result = substitute( argument{:} );
+            else
+                result = obj.Operation( argument{:} );
+            end
         end
         
         function n = numberOfNodes(obj)
@@ -116,7 +130,6 @@ classdef (InferiorClasses = {?Yop.Variable}) ComputationalGraph < Yop.MathOperat
         end
         
         function bool = dependsOn(obj, variable)
-            obj.disp
             bool = false;
             for k=1:length(obj.Argument)
                 bool = dependsOn(obj.Argument{k}, variable) || bool;
@@ -195,7 +208,7 @@ classdef (InferiorClasses = {?Yop.Variable}) ComputationalGraph < Yop.MathOperat
             if obj.graphIsaExpression
                 r = obj;
             else
-                r = rightmostExpression(obj.rhs);                
+                r = rightmostExpression(obj.rhs);
             end
         end
         
@@ -270,6 +283,64 @@ classdef (InferiorClasses = {?Yop.Variable}) ComputationalGraph < Yop.MathOperat
                     obj.lhs - obj.rhs, ...
                     zeros( size(obj.lhs.evaluateComputation) ) ...
                     );                
+            end
+        end
+    end
+    
+    methods % Operator overloading
+        function varargout = subsref(obj, s)
+            
+            if isempty(s)
+                varargout{1} = obj;
+                
+            elseif strcmp(s(1).type, '()') && length(s) > 1 
+                subsref(subsref(obj, s(1)), s(2:end))
+                
+            elseif strcmp(s(1).type, '{}') && length(s) > 1                
+                v = obj.value;
+                varargout{1} = subsref(Yop.Expression(v{s(1).subs{:}}), s(2:end));
+                
+            elseif strcmp(s(1).type, '.') && length(s) > 1 && ismethod(obj, s(1).subs)
+                narg = nargin(['Yop.Expression>Yop.Expression.' s(1).subs ]);
+                
+                if narg ~= 1 && length(s) == 2
+                    varargout{1} = obj.(s(1).subs)(s(2).subs{:});
+                    
+                elseif narg ~= 1
+                    varargout{1} = subsref(obj.(s(1).subs)(s(2).subs{:}), s(3:end));
+                    
+                else
+                    varargout{1} = subsref(obj.(s(1).subs), s(2:end));
+                    
+                end
+                
+            elseif strcmp(s(1).type, '.') && length(s) > 1 && isprop(obj, s(1).subs)
+                varargout{1} = subsref(obj.(s(1).subs), s(2:end));             
+                
+            elseif strcmp(s.type, '{}')
+                v = obj.value;
+                varargout{1} = Yop.Expression( v{s.subs{:}} );
+                
+            elseif strcmp(s.type, '.')
+                varargout{1} = obj.(s.subs);
+                
+            elseif strcmp(s.type, '()') && isnumeric(s.subs{1})
+                varargout{1} = Yop.ComputationalGraph(@subsref, obj, s);
+                
+            elseif strcmp(s.type, '()') && isa(s.subs{1}, 'YopTimepoint')
+                % Ändra tidpunkt för alla variabler (inputs) i grafen
+                varargout{1} = Yop.Expression(obj.Value, s.subs{1}.Timepoint);
+                
+            elseif strcmp(s.type, '()') && isIndependentInitial(s.subs{1})
+                % Ändra tidpunkt för alla variabler (inputs) i grafen
+                obj.Timepoint = Yop.getIndependentInitial;
+                varargout{1} = obj;
+                
+            elseif strcmp(s.type, '()') && isIndependentFinal(s.subs{1})
+                % Ändra tidpunkt för alla variabler (inputs) i grafen
+                obj.Timepoint = Yop.getIndependentFinal;
+                varargout{1} = obj;
+                
             end
         end
     end
