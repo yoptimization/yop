@@ -2,11 +2,11 @@ import Yop.*
 
 nx = 2;
 nu = 1;
-ts = variable('t');
-xs1 = variable('x1', 1);
-xs2 = variable('x2', 1);
+ts = YopVar('t');
+xs1 = YopVar('x1', 1);
+xs2 = YopVar('x2', 1);
 xs = [xs1; xs2];
-us = variable('u');
+us = YopVar('u');
 
 [ode, cart] = trolleyModel(ts, xs, us);
 
@@ -19,9 +19,9 @@ c2 = cart.speed(t0) == 1;
 c3 = cart.position(tf) == 0;
 c4 = cart.speed(tf) == 1;
 c5 = cart.position <= 1/9;
-c6 = 0 == t0 <= tf == 1;
+c6 = 0 == t0 <= tf == 1+xs(1);
 
-constraints = [c1, c2, c3, c4, c5, c6];
+constraints = {c1, c2, c3, c4, c5, c6};
 
 %%
 
