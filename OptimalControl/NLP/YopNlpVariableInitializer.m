@@ -89,8 +89,8 @@ classdef YopNlpVariableInitializer < handle
         end
         
         function y = signal(obj, signalExpression)
-            arguments = {obj.IndependentVariable, obj.StateVariable, obj.AlgebraicVariable, obj.ControlVariable, obj.ParameterVariable};
-            expressionFunction = casadi.Function('y', arguments, {signalExpression});
+            args = {obj.IndependentVariable, obj.StateVariable, obj.AlgebraicVariable, obj.ControlVariable, obj.ParameterVariable};
+            expressionFunction = casadi.Function('y', args, {signalExpression});
             y = full(expressionFunction(obj.IndependentValues, obj.StateValues, obj.AlgebraicValues, obj.ControlValues, obj.ParameterValues));
         end
     end
