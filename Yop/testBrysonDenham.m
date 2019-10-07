@@ -30,7 +30,7 @@ x = variable('x', 2);
 u = variable('u');
 [ode, cart] = trolleyModel(ts, xs, us);
 
-ocp = optimalControlProblem('states',  x, 'controls', u);
+ocp = optimizationProblem('states',  x, 'controls', u);
 
 ocp.minimize( 1/2*integral(cart.acceleration^2) );
 
