@@ -71,8 +71,8 @@ classdef YopSimulationResults < handle
         end
         
         function y = signal(obj, signalExpression)
-            arguments = {obj.Variables.Independent, obj.Variables.State, obj.Variables.Algebraic, obj.Variables.Parameter};
-            expressionFunction = casadi.Function('y', arguments, {signalExpression});
+            args = {obj.Variables.Independent, obj.Variables.State, obj.Variables.Algebraic, obj.Variables.Parameter};
+            expressionFunction = casadi.Function('y', args, {signalExpression});
             y = full(expressionFunction( ...
                 obj.NumericalResults.Independent, ...
                 obj.NumericalResults.State, ...
