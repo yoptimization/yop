@@ -1,11 +1,11 @@
-classdef YopLagrangePolynomial < handle & matlab.mixin.Copyable
+classdef LagrangePolynomial < handle & matlab.mixin.Copyable
     properties
         Data
         Basis
     end
     methods
         
-        function obj = YopLagrangePolynomial(xdata, ydata)
+        function obj = LagrangePolynomial(xdata, ydata)
             obj.Data.x = xdata;
             obj.Data.y = ydata;
             obj.calculateBasis;

@@ -73,7 +73,7 @@ classdef DefaultChangingBehavior < handle
                 end
                 
             elseif s(1).type == "()"
-                if isnumeric(s(1).subs{1})
+                if isnumeric(s(1).subs{1}) || ischar(s(1).subs{1})
                     argout = {Yop.ComputationalGraph(@subsref, obj, s(1))};
                     rest = s(2:end);
                     
@@ -85,7 +85,7 @@ classdef DefaultChangingBehavior < handle
                     argout = {tf(obj)};
                     rest = s(2:end);
                     
-                elseif isa(s(1).subs{:}, 'Yop.Expression')
+                elseif isa(s(1).subs{:}, 'Yop.ComputationalGraph')
                     argout = {ti(obj, s(1).subs{:}.Timepoint)};
                     rest = s(2:end);
                     
@@ -107,8 +107,8 @@ classdef DefaultChangingBehavior < handle
     end
     
     methods (Abstract)
-%         [s, varargout] = size(obj, varargin);
-%         n = numel(obj);
+        %         [s, varargout] = size(obj, varargin);
+        %         n = numel(obj);
         ind = end(obj,k,n);
     end
 end

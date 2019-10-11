@@ -1,14 +1,14 @@
-classdef YopCollocatedSignal < YopCollocationPolynomial
+classdef CollocatedSignal < Yop.CollocationPolynomial
     methods
-        function obj = YopCollocatedSignal(coefficients, degree, points, range)
-            obj@YopCollocationPolynomial(coefficients, degree, points, range);
+        function obj = CollocatedSignal(coefficients, points, degree, range)
+            obj@Yop.CollocationPolynomial(coefficients, points, degree, range);
         end
         
         function values = evaluate(obj, tau)
             values = [];
             for k=1:length(obj)
                 values = [values, ...
-                    obj(k).evaluate@YopCollocationPolynomial(tau)];
+                    obj(k).evaluate@Yop.CollocationPolynomial(tau)];
             end
         end
         
@@ -32,7 +32,7 @@ classdef YopCollocatedSignal < YopCollocationPolynomial
             polynomials = [];
             for k=1:length(obj)
                 polynomials = [polynomials, ...
-                    obj(k).integrate@YopCollocationPolynomial()];
+                    obj(k).integrate@Yop.CollocationPolynomial()];
             end
         end
         
@@ -40,7 +40,7 @@ classdef YopCollocatedSignal < YopCollocationPolynomial
             polynomials = [];
             for k=1:length(obj)
                 polynomials = [polynomials, ...
-                    obj(k).differentiate@YopCollocationPolynomial()];
+                    obj(k).differentiate@Yop.CollocationPolynomial()];
             end
         end
         

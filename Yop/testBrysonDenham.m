@@ -11,7 +11,7 @@ us = YopVar('u');
 [ode, cart] = trolleyModel(ts, xs, us);
 
 J = 1/2*integral(cart.acceleration^2);
-% J = 1000000*t_f( xs(1)^2 + (xs(2)+1)^2 ) + 1/2*integral(cart.acceleration^2);
+J = tf( xs(1)^2 + (xs(2)+1)^2 ) + 1/2*integral(cart.acceleration^2);
 % j1 = 1000000*t_i( xs(1)^2, 0.3 );
 % J = j1 + 1/2*integral(cart.acceleration^2);
 c1 = cart.position(t0) == 0;
@@ -25,35 +25,8 @@ constraints = {c1, c2, c3, c4, c5, c6};
 
 %%
 
-t = variable('t');
-x = variable('x', 2);
-u = variable('u');
-[ode, cart] = trolleyModel(ts, xs, us);
-
-ocp = optimizationProblem('states',  x, 'controls', u);
-
-ocp.minimize( 1/2*integral(cart.acceleration^2) );
-
-ocp.subjectTo( ...
-    dot(x) == ode, ...
-    cart.position(t0) == 0, ...
-    cart.speed(t0) == 1, ...
-    cart.position(tf) == 0, ...
-    cart.speed(tf) == 1, ...
-    cart.position <= 1/9, ...
-    0 == t0 <= tf == 1 ...
-    );
-
-res=ocp.solve('directCollocation', 'segements', 100, 'points', 'legendre');
-
-figure(1)
-subplot(211)
-res.plot(t, x(1));
-subplot(212)
-res.plot(t, x(2));
-
-figure(2)
-res.plot(t, u);
+% JFun = J.function
+dxFun = ode.functionalize('dx', xs, us);
 
 %%
 c1nlp = c1.unnestRelations;
@@ -68,8 +41,7 @@ c1nlp.isaBox
 
 deg = 3;
 points = 'legendre';
-cp = load('YopCollocationPoints.mat');
-tau = cp.collocationPoints.(points){deg};
+tau = Yop.CollocationPolynomial.collocationPoints(points, deg);
 
 t0 = 0;
 tf = 1;
@@ -81,13 +53,13 @@ label = @(symbol, k, r) [symbol '_(' num2str(k) ',' num2str(r) ')'];
 for k=1:K+1
     t = (k-1)*h;
     if k==1
-        x = YopCollocatedVariable(@(r) label('x', k, r), nx, deg, points, [t, t+h]);
+        x = Yop.CollocatedVariable(@(r) label('x', k, r), nx, points, deg, [t, t+h]);
         
     elseif k == K+1
-        x(k) = YopCollocatedVariable(@(r) label('x', k, r), nx, 0, points, [t, t]);
+        x(k) = Yop.CollocatedVariable(@(r) label('x', k, r), nx, points, 0, [t, t]);
         
     else
-        x(k) = YopCollocatedVariable(@(r) label('x', k, r), nx, deg, points, [t, t+h]);
+        x(k) = Yop.CollocatedVariable(@(r) label('x', k, r), nx, points, deg, [t, t+h]);
         
     end
 end
@@ -96,14 +68,13 @@ end
 for k=1:K
     t = (k-1)*h;
     if k==1
-        u = YopCollocatedVariable(@(r) label('u', k, r), nu, 0, points, [t, t+h]);
+        u = Yop.CollocatedVariable(@(r) label('u', k, r), nu, points, 0, [t, t+h]);
         
     else
-        u(k) = YopCollocatedVariable(@(r) label('u', k, r), nu, 0, points, [t, t+h]);
+        u(k) = Yop.CollocatedVariable(@(r) label('u', k, r), nu, points, 0, [t, t+h]);
         
     end
 end
-
 
 % Dynamics
 for k=1:K

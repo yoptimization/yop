@@ -1,4 +1,4 @@
-classdef Variable < Yop.MathOperations & Yop.VariableGraphInterface & Yop.DefaultChangingBehavior
+classdef Variable < Yop.MathOperations & Yop.VariableGraphInterface & Yop.DefaultChangingBehavior & matlab.mixin.Copyable
     
     properties
         Value
@@ -10,7 +10,7 @@ classdef Variable < Yop.MathOperations & Yop.VariableGraphInterface & Yop.Defaul
         end
         
         function obj = replace(obj, newValue)
-            obj.Value = newValue.Value;
+            obj.Value = newValue;
         end
         
         function disp(obj)
@@ -92,12 +92,12 @@ classdef Variable < Yop.MathOperations & Yop.VariableGraphInterface & Yop.Defaul
             t0(expression);            
         end
         
-        function obj = tf(obj)
+        function expression = tf(obj)
             expression = Yop.ComputationalGraph(@(obj) obj, obj);
             tf(expression);
         end
         
-        function obj = ti(obj, t_i)
+        function expression = ti(obj, t_i)
             expression = Yop.ComputationalGraph(@(obj) obj, obj);
             ti(expression, t_i);
         end

@@ -1,4 +1,4 @@
-classdef YopCollocationPolynomial < YopLagrangePolynomial
+classdef CollocationPolynomial < Yop.LagrangePolynomial
     properties
         Range
         StepCompensation = 1
@@ -6,25 +6,25 @@ classdef YopCollocationPolynomial < YopLagrangePolynomial
     
     methods
         
-        function obj = YopCollocationPolynomial(coefficients, degree, points, range)
+        function obj = CollocationPolynomial(coefficients, points, degree, range)
             collocationPoints = ...
-                YopCollocationPolynomial.collocationPoints(degree, points);
-            obj@YopLagrangePolynomial(collocationPoints, coefficients)
+                Yop.CollocationPolynomial.collocationPoints(points, degree);
+            obj@Yop.LagrangePolynomial(collocationPoints, coefficients)
             obj.Range = range;
         end
         
         function value = evaluate(obj, tau)
-            value = obj.evaluate@YopLagrangePolynomial(tau) ...
+            value = obj.evaluate@Yop.LagrangePolynomial(tau) ...
                 .* obj.StepCompensation;
         end
         
         function polynomial = integrate(obj)
-            polynomial = obj.integrate@YopLagrangePolynomial();
+            polynomial = obj.integrate@Yop.LagrangePolynomial();
             polynomial.StepCompensation = obj.StepCompensation*obj.h;
         end
         
         function polynomial = differentiate(obj)
-            polynomial = obj.differentiate@YopLagrangePolynomial();
+            polynomial = obj.differentiate@Yop.LagrangePolynomial();
             polynomial.StepCompensation = obj.StepCompensation/obj.h;
         end
         
@@ -43,10 +43,11 @@ classdef YopCollocationPolynomial < YopLagrangePolynomial
     end
     
     methods (Static)        
-        function tau = collocationPoints(degree, points)
+        function tau = collocationPoints(points, degree)
             if degree >= 1
-                cp = load('YopCollocationPoints.mat');
-                tau = cp.collocationPoints.(points){deg};                
+                folder = fileparts( mfilename('fullpath') );
+                cp = load([folder '/collocationPoints.mat']);
+                tau = cp.collocationPoints.(points){degree};               
             else
                 tau = 0;
             end

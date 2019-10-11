@@ -1,5 +1,5 @@
 function t = ti(expression, timepoint)
 
-t = Yop.Expression(expression, timepoint);
+t = ti(Yop.Variable(expression), timepoint);
 
 end

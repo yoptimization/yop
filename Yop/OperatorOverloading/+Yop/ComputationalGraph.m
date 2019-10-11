@@ -1,4 +1,4 @@
-classdef ComputationalGraph < Yop.MathOperations & Yop.VariableGraphInterface & Yop.DefaultChangingBehavior 
+classdef ComputationalGraph < Yop.MathOperations & Yop.VariableGraphInterface & Yop.DefaultChangingBehavior & matlab.mixin.Copyable
     
     properties
         Operation
@@ -328,6 +328,16 @@ classdef ComputationalGraph < Yop.MathOperations & Yop.VariableGraphInterface & 
                 ind = szd(k);
             else
                 ind = prod(szd(k:end));
+            end
+        end
+    end
+    
+    methods (Access=protected)
+        function cpObj = copyElement(obj)
+            cpObj = copyElement@matlab.mixin.Copyable(obj);
+            cpObj.Argument = cell(size(obj.Argument));
+            for k=1:length(obj.Argument)
+                cpObj.Argument{k} = copy(obj.Argument{k});
             end
         end
     end
