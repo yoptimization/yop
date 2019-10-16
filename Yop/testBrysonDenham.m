@@ -1,4 +1,4 @@
-import Yop.*
+import yop.*
 
 nx = 2;
 nu = 1;

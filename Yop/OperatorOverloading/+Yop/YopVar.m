@@ -8,8 +8,7 @@ if isempty(ip)
     ip.addOptional('symbol', 'v', @(x) true);
     ip.addOptional('rows', 1, @(x) true);
     ip.addOptional('columns', 1, @(x) true);
-end
-ip.parse(varargin{:});
+end	
 
 v = Yop.Variable(casadi.MX.sym( ...
     ip.Results.symbol, ...
