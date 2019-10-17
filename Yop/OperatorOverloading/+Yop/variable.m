@@ -19,6 +19,7 @@ classdef variable < yop.node
         
         function value = forward(obj)
             value = obj.value;
+            obj.stored_value = true;
         end
     end
 end

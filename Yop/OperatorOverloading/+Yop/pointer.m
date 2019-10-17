@@ -3,6 +3,7 @@ classdef pointer < handle
         object
     end
     methods
+        
         function obj = pointer(object)
             if nargin == 1
                 obj.object = object;
@@ -19,11 +20,5 @@ classdef pointer < handle
             end
         end
         
-        function objects = get_object(obj)            
-            objects = cell(size(obj));
-            for k=1:size(obj,2)
-                objects{k} = obj(k).object;
-            end
-        end        
     end
 end

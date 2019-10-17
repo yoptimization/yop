@@ -1,5 +1,8 @@
 %% Yop
 import yop.*
+yop.options.set('my_opts.mat')
+opts = yop.options.get();
+
 
 % variable - tidskontinuerlig
 % parameter - parameter som ska optimeras
@@ -8,14 +11,14 @@ import yop.*
 t_0 = parameter('t_0');
 t_f = parameter('t_f');
 t = variable('t');
-x = variable('x', 2);
+x = variable('x', 2, 1);
 u = variable('u');
-l = constant('l', 1);
+l = constant('l', 1, 1);
 alpa = signal('alpha', @(t) f(t));
 
-[ode, cart] = trolleyModel(ts, xs, us);
+[ode, cart] = trolley_model(t, x, u);
 
-ocp = optimization_problem('t0', t_0, 'tf', t_f, 'state',  x, 'control', u);
+ocp = optimization_problem('t0', t_0, 'tf', t_f, 'state', x, 'control', u);
 
 ocp.minimize( 1/2*integral( cart.acceleration^2 ) );
 

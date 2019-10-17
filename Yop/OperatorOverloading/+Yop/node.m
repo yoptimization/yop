@@ -1,17 +1,22 @@
 classdef node < handle
     
-    properties
+    properties (SetAccess=protected)
         name
-        parent
-        child
-        rows
-        columns
-        pointer
-        ordering
     end
     
-    properties (SetAccess=protected)
+    properties (Hidden, SetAccess=protected)
+        rows
+        columns
+        parent
+        child
         value
+        stored_value
+    end
+    
+    properties(SetAccess=private, GetAccess=private)
+        pointer
+        eval_order
+        order_stored
     end
     
     methods
@@ -27,28 +32,44 @@ classdef node < handle
             obj.rows = rows;
             obj.columns = columns;
             obj.pointer = yop.pointer(obj);
+            obj.stored_value = false;
+            obj.order_stored = false;
+        end
+        
+        function obj = set_parent(obj, parent)
+            if isempty(obj.parent)
+                obj.parent = parent.pointer;
+            else
+                obj.parent(end+1) = parent;
+            end
+        end
+        
+        function obj = set_child(obj, child)
+            if isempty(obj.child)
+                obj.child = child.pointer;
+            else
+                obj.child(end+1) = child;
+            end
+            obj.order_stored = false;
         end
         
         function obj = set_value(obj, value)
             obj.value = value;
-        end
-        
-        
-        function obj = set_parent(obj, pointer)
-            if isempty(obj.parent)
-                obj.parent = pointer;
-            else
-                obj.parent(end+1) = pointer;
+            for k=1:length(obj.parent)
+                input_changed_value(obj.parent(k).object);
             end
         end
         
-        function obj = set_child(obj, pointer)
-            if isempty(obj.parent)
-                obj.child = pointer;
-            else
-                obj.child(end+1, end+1+size(pointer,2)) = pointer;
+        function obj = input_changed_value(obj)
+            obj.stored_value = false;
+            for k=1:length(obj.parent)
+                input_changed_value(obj.parent(k).object);
             end
         end
+        
+    end
+    
+    methods % Default changing behavior
         
         function s = size(obj, dim)
             if nargin == 2
@@ -57,36 +78,20 @@ classdef node < handle
                 elseif dim == 2
                     s = obj.columns;
                 else
-                    yop.assert(false, ['Variables are matrix valued.', ...
-                        'A call to dimension ' num2str(dim) ...
-                        ' is therefore not possible.'])
+                    yop.assert(false, yop.messages.error_size(dim))
                 end
             else
                 s = [obj.rows, obj.columns];
             end
         end
         
+    end
+    
+    methods % Computational graph
         
-        function z = plus(x, y)
-            % typecast
-            
-            sx = size(x);
-            sy = size(y);
-            yop.assert(isequal(sx, sy) || isscalar(x) || isscalar(y), ...
-                ['Wrong dimensions for operation "+".' ...
-                'You have: [' num2str(sx) '] and [' num2str(sy) '].']);
-            
-            z_rows = max(sx(1), sy(1));
-            z_cols = max(sx(2), sy(2));
-            z = yop.operation('plus', z_rows, z_cols, @plus, [x.pointer, y.pointer]);
-            x.set_parent(z.pointer);
-            y.set_parent(z.pointer);
-            
-        end
-        
-        function obj = order_nodes(obj)
+        function obj = order_nodes(obj)            
             visited = yop.pointer;
-            evaluation_order = yop.pointer;            
+            ordering = yop.pointer;
             
             function recursion(node)
                 if isa(node, 'yop.operation')
@@ -96,30 +101,45 @@ classdef node < handle
                         end
                     end
                 end
-                if isempty(visited(1).object)
-                    visited(end+1) = node.pointer;
-                else
-                    visited(end+1) = node.pointer;
-                end
-                if isempty(evaluation_order(1).object)
-                    evaluation_order = node.pointer;
-                else
-                    evaluation_order(end+1) = node;
-                end
-                
+                visited(end+1) = node;
+                ordering(end+1) = node;
             end
             
-            recursion(obj);            
-            obj.ordering = evaluation_order;
-            
+            recursion(obj);
+            obj.eval_order = ordering(2:end);  
+            obj.order_stored = true;
         end
         
         function value = evaluate(obj)
-            order_nodes(obj);
-            for k=1:length(obj.ordering)
-                forward(obj.ordering(k).object);
+            if ~obj.order_stored
+                order_nodes(obj);
+            end
+            for k=1:length(obj.eval_order)
+                forward(obj.eval_order(k).object);
             end
             value = obj.value;
+        end
+        
+    end
+    
+    methods % ool
+        
+        function z = plus(x, y)
+            % typecast
+            
+            sx = size(x);
+            sy = size(y);
+            
+            cond = isequal(sx, sy) || isscalar(x) || isscalar(y);
+            yop.assert(cond, yop.messages.error_plus(sx, sy));
+            
+            z_rows = max(sx(1), sy(1));
+            z_cols = max(sx(2), sy(2));
+            z = yop.operation('plus', z_rows, z_cols, @plus);
+            z.set_child(x);
+            z.set_child(y);
+            x.set_parent(z);
+            y.set_parent(z);
         end
         
     end

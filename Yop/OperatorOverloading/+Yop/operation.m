@@ -1,25 +1,28 @@
 classdef operation < yop.node
     properties
-        operation_handle
+        op
         timepoint
         index
     end
     methods
         
-        function obj = operation(name, rows, cols, operation_handle, child_pointer)
+        function obj = operation(name, rows, cols, op)
             obj@yop.node(name, rows, cols);
-            obj.operation_handle = operation_handle;
-            obj.child = child_pointer;
+            obj.op = op;
         end
         
         function value = forward(obj)
-            child = obj.child.get_object();
-            args = cell(size(child));
-            for k=1:size(args,2)
-                args{k} = child{k}.value;
+            if obj.stored_value
+                value = obj.value;
+            else
+                args = cell(size(obj.child));
+                for k=1:size(args,2)
+                    args{k} = obj.child(k).object.value;
+                end
+                value = obj.op(args{:});
+                obj.value = value;
+                obj.stored_value = true;
             end
-            value = obj.operation_handle(args{:});
-            obj.value = value;
         end
         
     end
