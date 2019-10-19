@@ -14,7 +14,9 @@ classdef variable < yop.node
                 columns = 1;
                 
             end 
-            obj@yop.node(name, rows, columns); 
+            obj@yop.node(name, rows, columns);
+            
+            if yop.options
         end
         
         function value = forward(obj)
