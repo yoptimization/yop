@@ -1,5 +1,5 @@
 classdef options < handle &  matlab.mixin.SetGetExactNames
-    % options Controls the default options in Yop.
+    % yop.options Controls the default options in Yop.
     %    Options can be controlled in multiple ways.
     %    1. By obtaining the currently active option set by a call to:
     %         opts = yop.options()
@@ -46,8 +46,8 @@ classdef options < handle &  matlab.mixin.SetGetExactNames
     methods
         
         function obj = options(option_set)
-            % options Controls the default behavior of Yop. Default options
-            % are overruled by local options such as the number of
+            % OPTIONS Controls the default behavior of Yop. Default 
+            % options are overruled by local options such as the number of
             % collocation points.
             %
             % -- Syntax --
@@ -94,7 +94,7 @@ classdef options < handle &  matlab.mixin.SetGetExactNames
         end
         
         function obj = save(obj, file_name)
-            % save Save the options obj to the file file_name.
+            % SAVE Save the options 'obj' to the file file_name.
             %
             % -- Syntax --
             %    save(obj, file_name)
@@ -120,7 +120,7 @@ classdef options < handle &  matlab.mixin.SetGetExactNames
         end
         
         function obj = set_default(obj)
-            % set_default(obj) Reset the options to their default values.
+            % SET_DEFAULT Reset the options to their default values.
             %
             % -- Syntax --
             %    set_default(obj)
@@ -138,7 +138,7 @@ classdef options < handle &  matlab.mixin.SetGetExactNames
     methods (Static) % Available options
         
         function opts = set_symbolics(name)
-            % set_symbolics(name) Sets which symbolic software to use.
+            % SET_SYMBOLICS Sets which symbolic software to use.
             %
             % -- Syntax --
             %    yop.options.set_symbolics(name)
@@ -158,7 +158,7 @@ classdef options < handle &  matlab.mixin.SetGetExactNames
         end
         
         function name = get_symbolics()
-            % get_symbolics() Get which symbolic software is used.
+            % GET_SYMBOLICS Get which symbolic software is used.
             %
             % -- Syntax --
             %    name = yop.options.get_symbolics()
@@ -171,7 +171,7 @@ classdef options < handle &  matlab.mixin.SetGetExactNames
         end
         
         function opts = use_default()
-            % use_default Use the default options
+            % USE_DEFAULT Use the default options
             %
             % -- Syntax --
             %    yop.options.use_default()
@@ -184,7 +184,7 @@ classdef options < handle &  matlab.mixin.SetGetExactNames
         end
         
         function opts = save_current(file_name)
-            % save_current Save the current options to the file file_name.
+            % SAVE_CURRENT Save the current options to file.
             %
             % -- Syntax --
             %    yop.options.save_current(file_name)

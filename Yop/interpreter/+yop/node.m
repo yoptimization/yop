@@ -1,22 +1,22 @@
 classdef node < handle
     
-    properties (SetAccess=protected)
-        name
+    properties
+        name % Name of the node.
+    end
+    
+    properties (SetObservable, AbortSet)
+        value % Value associated with node.
     end
     
     properties (Hidden, SetAccess=protected)
-        rows
-        columns
-        parent
-        child
-        value
-        stored_value
+        rows    % Number of rows.
+        columns % Number of columns.
+        parent  % Parent nodes. Is proteced beacuse it needs a listener.
+        child   % Child nodes.
     end
     
-    properties(SetAccess=private, GetAccess=private)
-        pointer
+    properties (SetAccess=private, GetAccess=private)
         eval_order
-        order_stored
     end
     
     methods
@@ -31,39 +31,32 @@ classdef node < handle
             obj.name = name;
             obj.rows = rows;
             obj.columns = columns;
-            obj.pointer = yop.pointer(obj);
-            obj.stored_value = false;
-            obj.order_stored = false;
+            obj.parent = yop.node_listener_list();
+            obj.child = yop.list();
         end
         
         function obj = set_parent(obj, parent)
-            if isempty(obj.parent)
-                obj.parent = parent.pointer;
-            else
-                obj.parent(end+1) = parent;
-            end
+            listener = addlistener(obj, 'value', 'PostSet', @parent.clear);
+            add(obj.parent, parent, listener);
+        end
+        
+        function obj = remove_parent(obj, parent)
+            remove(obj.parent, parent);
         end
         
         function obj = set_child(obj, child)
-            if isempty(obj.child)
-                obj.child = child.pointer;
-            else
-                obj.child(end+1) = child;
-            end
-            obj.order_stored = false;
+            % Lyssnare?
+            add(obj.child, child);
         end
         
-        function obj = set_value(obj, value)
-            obj.value = value;
-            for k=1:length(obj.parent)
-                input_changed_value(obj.parent(k).object);
-            end
+        function obj = remove_child(obj, child)
+            % Ta bort lyssnare.
+            remove(obj.child, child);
         end
         
-        function obj = input_changed_value(obj)
-            obj.stored_value = false;
-            for k=1:length(obj.parent)
-                input_changed_value(obj.parent(k).object);
+        function clear(obj, ~, ~)
+            if isvalid(obj)
+                obj.value = [];
             end
         end
         
@@ -89,37 +82,35 @@ classdef node < handle
     
     methods % Computational graph
         
-        function obj = order_nodes(obj)            
-            visited = yop.pointer;
-            ordering = yop.pointer;
+        function obj = order_nodes(obj)
+            visited = yop.list;
+            ordering = yop.list;
             
             function recursion(node)
                 if isa(node, 'yop.operation')
-                    for k=1:length(node.child)
-                        if ~visited.contains(node.child(k))
-                            recursion(node.child(k).object);
+                    for k=1:length(node.child.elem)
+                        if ~visited.contains(node.child.elem(k).object)
+                            recursion(node.child.elem(k).object);
                         end
                     end
                 end
-                visited(end+1) = node;
-                ordering(end+1) = node;
+                add(visited, node);
+                add(ordering, node);
             end
             
             recursion(obj);
-            obj.eval_order = ordering(2:end);  
-            obj.order_stored = true;
+            obj.eval_order = ordering;
         end
         
         function value = evaluate(obj)
-            if ~obj.order_stored
+            if isempty(obj.eval_order)
                 order_nodes(obj);
             end
-            for k=1:length(obj.eval_order)
-                forward(obj.eval_order(k).object);
+            for k=1:length(obj.eval_order.elem)
+                forward(obj.eval_order.elem(k).object);
             end
             value = obj.value;
         end
-        
     end
     
     methods % ool
@@ -145,28 +136,5 @@ classdef node < handle
     end
     
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

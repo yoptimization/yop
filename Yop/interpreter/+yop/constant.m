@@ -1,6 +1,11 @@
-classdef variable < yop.node
+classdef constant < yop.node
+    properties
+        name
+    end
+    
     methods
-        function obj = variable(name, rows, columns) 
+        
+        function obj = constant(name, rows, columns)
             if nargin == 0
                 name = 'v';
                 rows = 1;
@@ -13,15 +18,9 @@ classdef variable < yop.node
             elseif nargin == 2
                 columns = 1;
                 
-            end 
+            end
             obj@yop.node(name, rows, columns);
-            
-            if yop.options
-        end
+        end       
         
-        function value = forward(obj)
-            value = obj.value;
-            obj.stored_value = true;
-        end
     end
 end

@@ -16,6 +16,8 @@ alpa = signal('alpha', @(t) f(t));
 
 [ode, cart] = trolley_model(t, x, u);
 
+constraint1 = some_expression <= some_other_expression;
+
 ocp = optimization_problem('t0', t_0, 'tf', t_f, 'state', x, 'control', u);
 
 ocp.minimize( 1/2*integral( cart.acceleration^2 ) );
@@ -28,21 +30,24 @@ ocp.subject_to( ...
     tf(cart.position) == 0, ...
     tf(cart.speed) == 1, ...
     cart.position <= l, ...
+    constraint1, ...
     0 == t_0 <= t_f == 1 ...
     );
 
-l.set_value(2);
+l.value = 2;
 
-res = ocp.solve(...
-    'directCollocation', ...
-    'segements', 100, ...
-    'points', 'legendre', ...
-    'degree', 5, ...
-    'initialGuess', sim_res ...
-    );
+ocp.method = 'direct_collocation';
+% help ocp.set.method
+ocp.points = 'legendre';
+ocp.set('segments', 100, 'degree', 5);
+res = ocp.solve();
 
-l.set_value(3);
-res2 = ocp.resolve();
+ocp.constraint(3).strict;
+strict(constraint1); % Trigger event;
+
+l.value = 3;
+ocp.initial_guess = sim_res2; % trigger event to change the initial guess
+res2 = ocp.solve(); % Options remembered
 
 figure(1)
 subplot(211)

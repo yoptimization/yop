@@ -20,5 +20,11 @@ classdef pointer < handle
             end
         end
         
+        function obj = add(obj, pointer)
+        end
+        
+        function obj = remove(obj, pointer)
+        end
+        
     end
 end
