@@ -1,10 +1,9 @@
-classdef constant < yop.node
+classdef parameter < yop.variable
     
     methods
-        
-        function obj = constant(name, rows, columns)
+        function obj = parameter(name, rows, columns)
             if nargin == 0
-                name = 'c';
+                name = 'p';
                 rows = 1;
                 columns = 1;
                 
@@ -16,8 +15,8 @@ classdef constant < yop.node
                 columns = 1;
                 
             end
-            obj@yop.node(name, rows, columns);
-        end       
-        
+            obj@yop.variable(name, rows, columns);
+        end
     end
+    
 end

@@ -8,7 +8,7 @@ classdef node < handle
         value % Value associated with node.
     end
     
-    properties (Hidden, SetAccess=protected)
+    properties (SetAccess=protected)
         rows    % Number of rows.
         columns % Number of columns.
         parent  % Parent nodes. Is proteced beacuse it needs a listener.
@@ -60,6 +60,13 @@ classdef node < handle
             end
         end
         
+        function obj = set_value(obj, value)
+            obj.value = value;
+        end
+        
+        function obj = forward(obj)
+        end
+        
     end
     
     methods % Default changing behavior
@@ -76,6 +83,10 @@ classdef node < handle
             else
                 s = [obj.rows, obj.columns];
             end
+        end
+        
+        function l = length(obj)
+            l = max(size(obj));
         end
         
     end
@@ -115,22 +126,254 @@ classdef node < handle
     
     methods % ool
         
-        function z = plus(x, y)
-            % typecast
+        function z = plus(x, y)            
+            x = yop.node.typecast(x);
+            y = yop.node.typecast(y);
             
-            sx = size(x);
-            sy = size(y);
+            yop.assert(yop.node.compatible(x, y), ...
+                yop.messages.incompatible_size('+', x, y));
             
-            cond = isequal(sx, sy) || isscalar(x) || isscalar(y);
-            yop.assert(cond, yop.messages.error_plus(sx, sy));
+            z_rows = max(size(x, 1), size(y, 1));
+            z_cols = max(size(x, 2), size(y, 2));
             
-            z_rows = max(sx(1), sy(1));
-            z_cols = max(sx(2), sy(2));
             z = yop.operation('plus', z_rows, z_cols, @plus);
+            
             z.set_child(x);
             z.set_child(y);
             x.set_parent(z);
             y.set_parent(z);
+        end
+        
+        function z = minus(x, y)
+            x = yop.node.typecast(x);
+            y = yop.node.typecast(y);
+            
+            yop.assert(yop.node.compatible(x, y), ...
+                yop.messages.incompatible_size('-', x, y));
+            
+            z_rows = max(size(x,1), size(y,1));
+            z_cols = max(size(x,2), size(y,2));
+            
+            z = yop.operation('minus', z_rows, z_cols, @minus);
+            
+            z.set_child(x);
+            z.set_child(y);
+            x.set_parent(z);
+            y.set_parent(z);
+        end
+        
+        function y = uplus(x)
+            y = yop.operation('uplus', x.rows, x.columns, @uplus);
+            y.set_child(x);
+            x.set_parent(y);
+        end
+        
+        function y = uminus(x)
+            y = yop.operation('uminus', x.rows, x.columns, @uminus);
+            y.set_child(x);
+            x.set_parent(y);
+        end
+        
+        function z = times(x, y)
+            x = yop.node.typecast(x);
+            y = yop.node.typecast(y);
+            
+            yop.assert(yop.node.compatible(x, y), ...
+                yop.messages.incompatible_size('.*', x, y));
+            
+            z_rows = max(size(x, 1), size(y, 1));
+            z_cols = max(size(x, 2), size(y, 2));
+            
+            z = yop.operation('times', z_rows, z_cols, @times);
+            
+            z.set_child(x);
+            z.set_child(y);
+            x.set_parent(z);
+            y.set_parent(z);
+        end
+        
+        function z = mtimes(x, y)
+            x = yop.node.typecast(x);
+            y = yop.node.typecast(y);
+            
+            cond = isscalar(x) || isscalar(y) || size(x,2)==size(y,1);
+            yop.assert(cond, yop.messages.incompatible_size('*', x, y));
+            
+            z = yop.operation('mtimes', size(x,1), size(y,2), @mtimes); 
+            
+            z.set_child(x);
+            z.set_child(y);
+            x.set_parent(z);
+            y.set_parent(z);
+        end
+        
+        function z = rdivide(x, y)
+            x = yop.node.typecast(x);
+            y = yop.node.typecast(y);
+            
+            yop.assert(yop.node.compatible(x, y), ...
+                yop.messages.incompatible_size('./', x, y));
+            
+            z_rows = max(size(x,1), size(y,1));
+            z_cols = max(size(x,2), size(y,2));
+            
+            z = yop.operation('rdivide', z_rows, z_cols, @rdivide); 
+            
+            z.set_child(x);
+            z.set_child(y);
+            x.set_parent(z);
+            y.set_parent(z);
+        end
+        
+        function z = ldivide(x, y)
+            x = yop.node.typecast(x);
+            y = yop.node.typecast(y);
+            
+            yop.assert(yop.node.compatible(x, y), ...
+                yop.messages.incompatible_size('.\', x, y));
+            
+            z_rows = max(size(x,1), size(y,1));
+            z_cols = max(size(x,2), size(y,2));
+            
+            z = yop.operation('ldivide', z_rows, z_cols, @ldivide); 
+            
+            z.set_child(x);
+            z.set_child(y);
+            x.set_parent(z);
+            y.set_parent(z);
+        end
+        
+        function z = mrdivide(x, y)
+            x = yop.node.typecast(x);
+            y = yop.node.typecast(y);
+            
+            cond = isscalar(y) || size(x,2)==size(y,2);
+            yop.assert(cond, yop.messages.incompatible_size('/', x, y));
+            
+            z = yop.operation('mrdivide', size(y,1), size(x,1), @mrdivide);
+            
+            z.set_child(x);
+            z.set_child(y);
+            x.set_parent(z);
+            y.set_parent(z);
+        end
+        
+        function z = mldivide(x, y)
+            x = yop.node.typecast(x);
+            y = yop.node.typecast(y);
+            
+            cond = isscalar(x) || size(x,1)==size(y,1);
+            yop.assert(cond, yop.messages.incompatible_size('\', x, y));
+            
+            z = yop.operation('mldivide', size(y,1), size(x,1), @mldivide);
+            
+            z.set_child(x);
+            z.set_child(y);
+            x.set_parent(z);
+            y.set_parent(z);
+        end
+        
+        function z = power(x, y)
+            x = yop.node.typecast(x);
+            y = yop.node.typecast(y);
+            
+            yop.assert(yop.node.compatible(x, y), ...
+                yop.messages.incompatible_size('.^', x, y));
+            
+            z_rows = max(size(x, 1), size(y, 1));
+            z_cols = max(size(x, 2), size(y, 2));
+            
+            z = yop.operation('power', z_rows, z_cols, @power);
+            
+            z.set_child(x);
+            z.set_child(y);
+            x.set_parent(z);
+            y.set_parent(z);
+        end
+        
+        function z = mpower(x, y)
+            x = yop.node.typecast(x);
+            y = yop.node.typecast(y);
+            
+            cond = size(x,1)==size(x,2) && isscalar(y) || ...
+                size(y,1)==size(y,2) && isscalar(x);
+            yop.assert(cond, yop.messages.incompatible_size('^', x, y));
+            
+            z_rows = max(size(x, 1), size(y, 1));
+            z_cols = max(size(x, 2), size(y, 2));
+            
+            z = yop.operation('mpower', z_rows, z_cols, @mpower);
+            
+            z.set_child(x);
+            z.set_child(y);
+            x.set_parent(z);
+            y.set_parent(z);
+        end
+        
+        function y = exp(x)
+            y = yop.operation('exp', x.rows, x.columns, @exp);
+            y.set_child(x);
+            x.set_parent(y);
+        end
+        
+        function y = expm(x)
+            cond = size(x,1)==size(x,2);
+            yop.assert(cond, yop.messages.wrong_size('expm', x));
+            y = yop.operation('exp', x.rows, x.columns, @expm);
+            y.set_child(x);
+            x.set_parent(y);
+        end
+        
+        
+        % ctranspose(x), transpose(x)
+        % Relations, Logic
+        % horzcat, vertcat.
+        
+        
+        function z = dot(x, y)
+            x = yop.node.typecast(x);
+            y = yop.node.typecast(y);
+            
+            cond = size(x)==size(y);
+            yop.assert(cond, yop.messages.incompatible_size('dot', x, y));
+            
+            z = yop.operation('dot', size(x,1), size(x,2), @dot);    
+            
+            z.set_child(x);
+            z.set_child(y);
+            x.set_parent(z);
+            y.set_parent(z);
+        end
+        
+        function y = sign(x)
+            y = yop.operation('sign', 1, 1, @sign);
+            y.set_child(x);
+            x.set_parent(y);
+        end
+        
+        function z = cross(x, y)
+        end
+        
+        function y = norm(x)
+        end
+        
+    end
+    
+    methods (Static)
+        function v = typecast(v)
+            if ~isa(v, 'yop.node')
+                v = yop.constant('c', size(v,1), size(v,2)).set_value(v);
+            end
+        end
+        
+        function bool = compatible(x, y)
+            % COMPATIBLE Check if inputs are 2D compatible
+            
+            bool = isequal(size(x), size(y)) ...    Equal size
+                || isscalar(x) || isscalar(y) ...   One input scalar
+                || ( size(x,1)==size(y,1) ) ...     Same number of rows
+                || size(x,1)==1 && size(y,2)==1 ... One row, one column
+                || size(x,2)==1 && size(y,1)==1;     
         end
         
     end

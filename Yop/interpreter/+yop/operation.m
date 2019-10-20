@@ -5,8 +5,8 @@ classdef operation < yop.node & yop.stupid_overhead
     end
     methods
         
-        function obj = operation(name, rows, cols, operation)
-            obj@yop.node(name, rows, cols);
+        function obj = operation(name, rows, columns, operation)
+            obj@yop.node(name, rows, columns);
             obj.operation = operation;
         end
         

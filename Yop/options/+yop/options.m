@@ -16,7 +16,6 @@ classdef options < handle &  matlab.mixin.SetGetExactNames
     %
     % -- Properties --
     %    symbolics - Controls which symbolic package to use.
-    %    display_package - Controls the symbolic package used for plotting.
     %
     % -- Methods --
     %    obj = options(option_set) :Obtain the options currently used,
@@ -40,7 +39,6 @@ classdef options < handle &  matlab.mixin.SetGetExactNames
     
     properties
         symbolics % Controls which symbolic package to use.
-        display_package % Controls the symbolic package used for plotting.
     end
     
     methods
@@ -129,16 +127,29 @@ classdef options < handle &  matlab.mixin.SetGetExactNames
             % -- Arguments --
             %    obj : Handle to the option object
             
-            obj.symbolics = 'symbolic_math';
-            obj.display_package = 'symbolic_math';
+            obj.symbolics = 'casadi';
         end
         
     end
     
     methods (Static) % Available options
         
+        function opts = use_default()
+            % USE_DEFAULT Use the default options
+            %
+            % -- Syntax --
+            %    yop.options.use_default()
+            %
+            % -- Arguments --
+            %    opts : Handle to the current options.
+            
+            opts = yop.options();
+            set_default(opts);
+        end
+        
         function opts = set_symbolics(name)
-            % SET_SYMBOLICS Sets which symbolic software to use.
+            % SET_SYMBOLICS Sets which symbolic software to use for
+            %               computations.
             %
             % -- Syntax --
             %    yop.options.set_symbolics(name)
@@ -158,29 +169,17 @@ classdef options < handle &  matlab.mixin.SetGetExactNames
         end
         
         function name = get_symbolics()
-            % GET_SYMBOLICS Get which symbolic software is used.
+            % GET_SYMBOLICS Get which symbolic software is used for
+            %               computations.
             %
             % -- Syntax --
             %    name = yop.options.get_symbolics()
             %
             % -- Arguments --
-            %    name : Handle to the current options.
+            %    name : Name of the package.
             
             opts = yop.options();
             name = opts.symbolics;
-        end
-        
-        function opts = use_default()
-            % USE_DEFAULT Use the default options
-            %
-            % -- Syntax --
-            %    yop.options.use_default()
-            %
-            % -- Arguments --
-            %    opts : Handle to the current options.
-            
-            opts = yop.options();
-            set_default(opts);
         end
         
         function opts = save_current(file_name)

@@ -4,8 +4,13 @@ classdef messages < handle
            msg = ['Variables are matrix valued. Size of dimension ' num2str(dim) ' is therefore not possible.'];
        end
        
-       function msg = error_plus(sx, sy)
-           msg = ['Wrong dimensions for operation "+". You have: [' num2str(sx) '] and [' num2str(sy) '].'];
+       function msg = wrong_size(operation, x)
+            msg = ['Wrong dimensions for operation "', operation,'". You have: [' num2str(size(x)) '].'];
        end
+       
+       function msg = incompatible_size(operation, x, y)
+            msg = ['Wrong dimensions for operation "', operation,'". You have: [' num2str(size(x)) '] and [' num2str(size(y)) '].'];
+       end
+       
    end
 end

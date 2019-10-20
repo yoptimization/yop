@@ -1,4 +1,5 @@
 classdef variable < yop.node
+    
     methods
         
         function obj = variable(name, rows, columns)
@@ -16,21 +17,26 @@ classdef variable < yop.node
                 
             end
             obj@yop.node(name, rows, columns);
-            
+            obj.value = yop.variable.symbol(name, rows, columns);
+        end
+        
+    end
+    
+    methods (Static)
+        
+        function v = symbol(name, rows, columns)       
             if yop.options.get_symbolics == "symbolic_math"
+                
                 if rows==1 && columns==1
-                    obj.value = sym(name);
+                    v = sym(name);
                 else
-                    obj.value = sym(name, [rows, columns]);
+                    v = sym(name, [rows, columns]);
                 end
                 
             elseif yop.options.get_symbolics == "casadi"
-                obj.value = casadi.MX.sym(name, rows, columns);
+                v = casadi.MX.sym(name, rows, columns);
                 
             end
-        end
-        
-        function obj = forward(obj)
         end
         
     end
