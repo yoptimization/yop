@@ -25,7 +25,7 @@ classdef variable < yop.node
     methods (Static)
         
         function v = symbol(name, rows, columns)       
-            if yop.options.get_symbolics == "symbolic_math"
+            if yop.options.get_symbolics == yop.options.name_symbolic_math
                 
                 if rows==1 && columns==1
                     v = sym(name);
@@ -33,7 +33,7 @@ classdef variable < yop.node
                     v = sym(name, [rows, columns]);
                 end
                 
-            elseif yop.options.get_symbolics == "casadi"
+            elseif yop.options.get_symbolics == yop.options.name_casadi
                 v = casadi.MX.sym(name, rows, columns);
                 
             end

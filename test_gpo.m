@@ -3,7 +3,7 @@
 % yop.options.set_symbolics('casadi')
 % yop.options.set_symbolics('symbolic_math')
 %%
-v1 = yop.variable('v1');
+v1 = yop.variable('v1',2,1);
 v2 = yop.variable('v2');
 v3 = yop.variable('v3');
 v4 = yop.variable('v4');

@@ -18,6 +18,9 @@ alpa = signal('alpha', @(t) f(t));
 
 constraint1 = some_expression <= some_other_expression;
 
+% Interface mot alla matlabs lösare?
+% Beskriva ocp-lösaren i yop mha yop? Dvs. ställa upp det olinjära
+% problemet mha yop? förs nlp-lösare sedan ocp-lösare
 ocp = optimization_problem('t0', t_0, 'tf', t_f, 'state', x, 'control', u);
 
 ocp.minimize( 1/2*integral( cart.acceleration^2 ) );

@@ -39,7 +39,7 @@ classdef options < handle &  matlab.mixin.SetGetExactNames
     
     properties
         symbolics % Controls which symbolic package to use.
-    end
+    end    
     
     methods
         
@@ -156,13 +156,17 @@ classdef options < handle &  matlab.mixin.SetGetExactNames
             %
             % -- Arguments --
             %    name : Name of the package to use.
-            %         = 'symbolic_math' % Use Matlab's symbolic math.
+            %         = 'symbolic math' % Use Matlab's symbolic math.
             %         = 'casadi'        % Use CasADi.
             %    opts : Handle to the current options.
             %
             % -- Examples --
-            %    yop.options.set_symbolics('symbolic_math')
+            %    yop.options.set_symbolics('symbolic math')
             %    yop.options.set_symbolics('casadi')
+            
+            cond = name==yop.options.name_symbolic_math || ...
+                   name==yop.options.name_casadi;
+            yop.assert(cond, yop.messages.unrecognized_option(name, 'set_symbolics'));
             
             opts = yop.options();
             opts.symbolics = name;
@@ -197,6 +201,19 @@ classdef options < handle &  matlab.mixin.SetGetExactNames
             
             opts = yop.options();
             save(opts, file_name);
+        end
+        
+    end
+    
+    methods (Hidden, Static)
+
+       
+        function txt = name_symbolic_math()
+            txt = "symbolic math";
+        end
+        
+        function txt = name_casadi()
+            txt = "casadi";
         end
         
     end
