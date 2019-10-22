@@ -6,6 +6,7 @@ yop.options.set_symbolics('casadi')
 t = yop.parameter('t');
 x = yop.variable('x', 2);
 u = yop.variable('u');
+x0 = yop.constant('x0', 2);
 
 [f, y] = trolleyModel(t, x, u);
 
@@ -15,5 +16,11 @@ x = yop.variable('x', 3);
 u = yop.variable('u');
 
 [f, y] = goddardModel(t,x,u);
+
+%% 
+
+% Göra funktioner
+% Kopiera grafer 
+
 
 

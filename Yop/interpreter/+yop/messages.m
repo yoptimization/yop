@@ -16,5 +16,9 @@ classdef messages < handle
            msg = ['Option "' option_passed '" passed to ' fn_name ' is not recognized as a valid option'];
        end
        
+       function msg = debug_operation_wrong_size()
+           msg = '[Debug] Operation produced the wrong size of the node.';
+       end
+       
    end
 end

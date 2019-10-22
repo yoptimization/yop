@@ -134,6 +134,52 @@ classdef node < handle
             l = max(size(obj));
         end
         
+        function y = horzcat(varargin)
+            cols = 0;
+            cond = true;
+            for k = 1:length(varargin)
+                cond = cond && size(varargin{k},1)==size(varargin{1},1);
+                if cond
+                    varargin{k} = yop.node.typecast(varargin{k});
+                    cols = cols + size(varargin{k}, 2);
+                else
+                    break
+                end
+            end
+            yop.assert(cond, yop.messages.incompatible_size( ...
+                'horzcat', varargin{1}, varargin{k}));
+            
+            y = yop.operation('horzcat', size(varargin{1},1), cols, @horzcat);
+            
+            for k=1:length(varargin)
+                set_child(y, varargin{k});
+                set_parent(varargin{k}, y);
+            end
+        end
+        
+        function y = vertcat(varargin)
+            row_cnt = 0;
+            cond = true;
+            for k = 1:length(varargin)
+                cond = cond && size(varargin{k},2)==size(varargin{1},2);
+                if cond
+                    varargin{k} = yop.node.typecast(varargin{k});
+                    row_cnt = row_cnt + size(varargin{k}, 1);
+                else
+                    break
+                end
+            end
+            yop.assert(cond, yop.messages.incompatible_size( ...
+                'vertcat', varargin{1}, varargin{k}));
+            
+            y = yop.operation('vertcat', row_cnt, size(varargin{1},2), @vertcat);
+            
+            for k=1:length(varargin)
+                set_child(y, varargin{k});
+                set_parent(varargin{k}, y);
+            end
+        end
+        
     end
     
     methods % Computational graph
@@ -143,7 +189,7 @@ classdef node < handle
             ordering = yop.list;
             
             function recursion(node)
-                if isa(node, 'yop.operation')
+                if isa(node, 'yop.operation') || isa(node, 'yop.relation')
                     for k=1:length(node.child.elem)
                         if ~visited.contains(node.child.elem(k).object)
                             recursion(node.child.elem(k).object);
@@ -187,6 +233,8 @@ classdef node < handle
             set_child(z, y);
             set_parent(x, z);
             set_parent(y, z);
+            
+            yop.debug.validate_size([z.rows, z.columns], size(plus(ones(size(x)), ones(size(y)))));
         end
         
         function z = minus(x, y)
@@ -403,59 +451,143 @@ classdef node < handle
         end
         
         function z = cross(x, y)
+            
         end
         
         function y = norm(x)
+            r = 1;
+            c = 1;
         end
         
-        function y = horzcat(varargin)
-            cols = 0;
-            cond = true;
-            for k = 1:length(varargin)
-                cond = cond && size(varargin{k},1)==size(varargin{1},1);
-                if cond
-                    varargin{k} = yop.node.typecast(varargin{k});
-                    cols = cols + size(varargin{k}, 2);
-                else
-                    break
-                end
+        function r = lt(lhs, rhs)
+            if isnumeric(lhs)
+                tmp = lhs.*ones(size(rhs));
+                lhs = yop.constant('lhs', size(rhs,1), size(rhs,2));
+                lhs.value = tmp;
+            elseif isnumeric(rhs)
+                tmp = rhs.*ones(size(lhs));
+                rhs = yop.constant('rhs', size(lhs,1), size(lhs,2));
+                rhs.value = tmp;
             end
-            yop.assert(cond, yop.messages.incompatible_size( ...
-                'horzcat', varargin{1}, varargin{k}));
             
-            y = yop.operation('horzcat', size(varargin{1},1), cols, @horzcat);
+            cond = size(lhs,1)==size(rhs,1)&&size(lhs,2)==size(rhs,2);
+            yop.assert(cond, yop.messages.incompatible_size('<', lhs, rhs));
             
-            for k=1:length(varargin)
-                set_child(y, varargin{k});
-                set_parent(varargin{k}, y);
-            end
+            r = yop.relation('<', size(lhs,1), size(lhs,2), @lt);
+            set_child(r, lhs);
+            set_child(r, rhs);
+            set_parent(lhs, r);
+            set_parent(rhs, r); 
         end
         
-        function y = vertcat(varargin)
-            row_cnt = 0;
-            cond = true;
-            for k = 1:length(varargin)
-                cond = cond && size(varargin{k},2)==size(varargin{1},2);
-                if cond
-                    varargin{k} = yop.node.typecast(varargin{k});
-                    row_cnt = row_cnt + size(varargin{k}, 1);
-                else
-                    break
-                end
+        function r = gt(lhs, rhs)
+            if isnumeric(lhs)
+                tmp = lhs.*ones(size(rhs));
+                lhs = yop.constant('lhs', size(rhs,1), size(rhs,2));
+                lhs.value = tmp;
+            elseif isnumeric(rhs)
+                tmp = rhs.*ones(size(lhs));
+                rhs = yop.constant('rhs', size(lhs,1), size(lhs,2));
+                rhs.value = tmp;
             end
-            yop.assert(cond, yop.messages.incompatible_size( ...
-                'vertcat', varargin{1}, varargin{k}));
             
-            y = yop.operation('vertcat', row_cnt, size(varargin{1},2), @vertcat);
+            cond = size(lhs,1)==size(rhs,1)&&size(lhs,2)==size(rhs,2);
+            yop.assert(cond, yop.messages.incompatible_size('>', lhs, rhs));
             
-            for k=1:length(varargin)
-                set_child(y, varargin{k});
-                set_parent(varargin{k}, y);
-            end
+            r = yop.relation('>', size(lhs,1), size(lhs,2), @gt);
+            set_child(r, lhs);
+            set_child(r, rhs);
+            set_parent(lhs, r);
+            set_parent(rhs, r); 
         end
         
-        % --- Relations, Logic ---
-        % ------------------------
+        function r = le(lhs, rhs)
+            if isnumeric(lhs)
+                tmp = lhs.*ones(size(rhs));
+                lhs = yop.constant('lhs', size(rhs,1), size(rhs,2));
+                lhs.value = tmp;
+            elseif isnumeric(rhs)
+                tmp = rhs.*ones(size(lhs));
+                rhs = yop.constant('rhs', size(lhs,1), size(lhs,2));
+                rhs.value = tmp;
+            end
+            
+            cond = size(lhs,1)==size(rhs,1)&&size(lhs,2)==size(rhs,2);
+            yop.assert(cond, yop.messages.incompatible_size('<=', lhs, rhs));
+            
+            r = yop.relation('<=', size(lhs,1), size(lhs,2), @le);
+            set_child(r, lhs);
+            set_child(r, rhs);
+            set_parent(lhs, r);
+            set_parent(rhs, r); 
+        end
+        
+        function r = ge(lhs, rhs)
+            if isnumeric(lhs)
+                tmp = lhs.*ones(size(rhs));
+                lhs = yop.constant('lhs', size(rhs,1), size(rhs,2));
+                lhs.value = tmp;
+            elseif isnumeric(rhs)
+                tmp = rhs.*ones(size(lhs));
+                rhs = yop.constant('rhs', size(lhs,1), size(lhs,2));
+                rhs.value = tmp;
+            end
+            
+            cond = size(lhs,1)==size(rhs,1)&&size(lhs,2)==size(rhs,2);
+            yop.assert(cond, yop.messages.incompatible_size('>=', lhs, rhs));
+            
+            r = yop.relation('>=', size(lhs,1), size(lhs,2), @ge);
+            set_child(r, lhs);
+            set_child(r, rhs);
+            set_parent(lhs, r);
+            set_parent(rhs, r); 
+        end
+        
+        function r = ne(lhs, rhs)
+            if isnumeric(lhs)
+                tmp = lhs.*ones(size(rhs));
+                lhs = yop.constant('lhs', size(rhs,1), size(rhs,2));
+                lhs.value = tmp;
+            elseif isnumeric(rhs)
+                tmp = rhs.*ones(size(lhs));
+                rhs = yop.constant('rhs', size(lhs,1), size(lhs,2));
+                rhs.value = tmp;
+            end
+            
+            cond = size(lhs,1)==size(rhs,1)&&size(lhs,2)==size(rhs,2);
+            yop.assert(cond, yop.messages.incompatible_size('~=', lhs, rhs));
+            
+            r = yop.relation('~=', size(lhs,1), size(lhs,2), @ne);
+            set_child(r, lhs);
+            set_child(r, rhs);
+            set_parent(lhs, r);
+            set_parent(rhs, r);
+        end
+        
+        function r = eq(lhs, rhs)
+            if isnumeric(lhs)
+                tmp = lhs.*ones(size(rhs));
+                lhs = yop.constant('lhs', size(rhs,1), size(rhs,2));
+                lhs.value = tmp;
+            elseif isnumeric(rhs)
+                tmp = rhs.*ones(size(lhs));
+                rhs = yop.constant('rhs', size(lhs,1), size(lhs,2));
+                rhs.value = tmp;
+            end
+            
+            cond = size(lhs,1)==size(rhs,1)&&size(lhs,2)==size(rhs,2);
+            yop.assert(cond, yop.messages.incompatible_size('==', lhs, rhs));
+            
+            r = yop.relation('==', size(lhs,1), size(lhs,2), @eq);
+            set_child(r, lhs);
+            set_child(r, rhs);
+            set_parent(lhs, r);
+            set_parent(rhs, r); 
+        end
+        
+        % --- Logic ---
+        % Size scalar?
+        % ------------------------------------------------------------------------------------------------
         
     end
     

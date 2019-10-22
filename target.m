@@ -61,7 +61,7 @@ res.plot(t, x(2));
 figure(2)
 res.plot(t, u);
 
-%%
+%% Simulation
 simulator = yop.simulator('t0', t_0, 'tf', t_f, 'state', x, 'algebraic', z);
 
 simulator.problem(t_0==0, t_f==1, dot(x)==ode, t0(x)==x0);
@@ -71,3 +71,19 @@ simulator.reltol = 1e-4;
 simulator.integrator = 'ode15s';
 sim_res = simulator.simulate();
 
+
+%% Optimization problems (general)
+
+v = variable('v', 100);
+c = constatn('c', 1);
+c.value = 0;
+
+yoptimizer = yop.optimization_pronblem('variable', v);
+yoptimizer.minimize(norm(v-c));
+yoptimizer.subject_to(-1 <= v <= 1);
+yoptimizer.solver = 'fmincon';
+
+res = yoptimizer.solve();
+
+c.value = 1;
+res1 = yoptimizer.solve();

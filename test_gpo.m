@@ -1,14 +1,13 @@
 % syms x1 x2 x3 x4
-
 % yop.options.set_symbolics('casadi')
-% yop.options.set_symbolics('symbolic_math')
+% yop.options.set_symbolics('symbolic math')
 %%
-v1 = yop.variable('v1',2,1);
+v1 = yop.variable('v1', 2);
 v2 = yop.variable('v2');
 v3 = yop.variable('v3');
 v4 = yop.variable('v4');
-c1 = yop.constant('c1');
-c1.value = 1;
+c1 = yop.constant('c1', 2);
+c1.value = [1;1];
 
 %%
 n1 = v1 + v2;

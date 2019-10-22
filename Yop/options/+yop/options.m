@@ -1,5 +1,5 @@
 classdef options < handle &  matlab.mixin.SetGetExactNames
-    % yop.options Controls the default options in Yop.
+    % OPTIONS Controls the default options in Yop.
     %    Options can be controlled in multiple ways.
     %    1. By obtaining the currently active option set by a call to:
     %         opts = yop.options()

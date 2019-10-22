@@ -28,9 +28,9 @@ classdef variable < yop.node
             if yop.options.get_symbolics == yop.options.name_symbolic_math
                 
                 if rows==1 && columns==1
-                    v = sym(name);
+                    v = sym(name, 'real');
                 else
-                    v = sym(name, [rows, columns]);
+                    v = sym(name, [rows, columns], 'real');
                 end
                 
             elseif yop.options.get_symbolics == yop.options.name_casadi
