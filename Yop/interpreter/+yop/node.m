@@ -67,16 +67,67 @@ classdef node < handle
         function obj = forward(obj)
         end
         
-        function bool = isa_expression(obj)
-            % Test if the tree form an expression
-            bool = ~isa(obj, 'yop.relation');
-            k = length(obj.child);
-            while bool == true && k <= length(obj.child)
-                bool = bool && ...
-                    ~isa_relation(obj.child.elem(k).object) && ...
-                    isa_expression(obj.child.elem(k).object);
-                k = k+1;
-            end  
+        function bool = isa_valid_relation(obj)
+            % tests for the following structure where r is a relation and e
+            % is an expression, e.g. e1 <= e2 <= ... <= eN
+            %         r
+            %        / \
+            %       r   e
+            %      / \
+            %     r   e
+            %    /\
+            %   e  e
+            if isa(obj, 'yop.relation') && ~isa(left(obj),'yop.relation') && ~isa(right(obj),'yop.relation')
+                % This is the end node.
+                bool = true;
+                
+            elseif isa(obj, 'yop.relation') && isa(left(obj),'yop.relation') && ~isa(right(obj),'yop.relation')
+                bool = valid_relation(left(obj));
+                
+            else
+                bool = false;
+                
+            end
+            
+        end
+        
+        function bool = isa_variable(obj)            
+            if isa(obj, 'yop.variable')
+                bool = true;
+                
+            elseif ~isa(obj, 'yop.subs_operation')
+                bool = false;
+                
+            else % has to be a subs_operation and therefore it's
+                 % sufficient to look at the first argument and see if that
+                 % tree only containts variables or subs_operations
+                bool = isa_variable(obj.child.elem(1).object);
+                
+            end            
+        end
+        
+        function l = left(obj)
+            l = obj.child.elem(1).object;
+        end
+        
+        function l = right(obj)
+            l = obj.child.elem(2).object;
+        end
+        
+        function r = leftmost(obj)
+            if isa_variable(obj)
+                r = obj;
+            else
+                r = leftmost(left(obj));
+            end
+        end
+        
+        function r = rightmost(obj)
+            if isa_variable(obj)
+                r = obj;
+            else
+                r = rightmost(right(obj));
+            end
         end
         
     end
@@ -89,7 +140,7 @@ classdef node < handle
                 tmp = tmp((s(1).subs{1}));
                 
                 txt = [x.name '(' num2str(s(1).subs{1}) ')'];
-                y = yop.operation(txt, size(tmp,1), size(tmp,2), @subsref);
+                y = yop.subs_operation(txt, size(tmp,1), size(tmp,2), @subsref);
                 
                 s_yop = yop.constant('s', 1, 1);
                 s_yop.value = s(1);
@@ -111,7 +162,7 @@ classdef node < handle
             if s(1).type == "()" && isnumeric(s(1).subs{1})
                 y = yop.node.typecast(y);
                 
-                z = yop.operation(x.name, x.rows, x.columns, @subsasgn);
+                z = yop.subs_operation(x.name, x.rows, x.columns, @subsasgn);
                 
                 s_yop = yop.constant('s', 1, 1);
                 s_yop.value = s(1);
@@ -121,8 +172,7 @@ classdef node < handle
                 set_child(z, y);
                 set_parent(x, z);
                 set_parent(s_yop, z);
-                set_parent(y, z);
-                
+                set_parent(y, z);                
             else
                 z = builtin('subsasgn',x, s, y);
             end

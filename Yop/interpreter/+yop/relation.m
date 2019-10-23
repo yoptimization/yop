@@ -14,52 +14,70 @@ classdef relation < yop.node & yop.more_stupid_overhead
         end
         
         
-        
-        function graph = unnest(obj)
-            % Interprets graph as a constraint and unnest relations in the
-            % graph from left to right. May brake down if graph is not a
-            % valid constraint.
-            % I.e. -1 <= f(x) <= 1 turns into:
-            %  -1 <= f(x)
-            %  f(x) <= 1
+        function graph = split(obj)
+            % parsing the following structure
+            %         r3
+            %        / \
+            %       r2  e4
+            %      / \
+            %     r1  e3
+            %    /\
+            %  e1 e2
+            %
+            % Splits into
+            %   r1     r2     r3
+            %  /  \   /  \   /  \
+            % e1  e2 e2  e3 e3  e4
+            %
+            % e1 < e2 < e3 < e4 => {e1 < e2, e2 < e3, e3 < e4}
             
-            if isa_expression(left(obj)) && isa_expression(right(obj)) && isa(obj, 'yop.relation')
+            if isa(obj, 'yop.relation') && ~isa(left(obj),'yop.relation') && ~isa(right(obj),'yop.relation')
+                % This is the end node.
                 graph = {obj};
                 
-            elseif isa_expression(left(obj)) && isa(right(obj), 'yop.relation') && isa(obj, 'yop.relation')
-                lhs = yop.relation(obj.name, obj.rows, obj.columns, obj.relation);
-                lmr = leftmost(right(obj));
-                set_child(lhs, left(obj));
-                set_child(lhs, lmr);
-                set_parent(lmr, lhs);
-                rhs = unnest(right(obj));
-                graph = [{lhs}; rhs(:)];
-                
-            elseif isa(left(obj), 'yop.relation') && isa_expression(right(obj)) && isa(obj, 'yop.relation')
-                lhs = unnest(left(obj));
-                rhs = yop.relation(obj.name, obj.rows, obj.columns, obj.relation);
-                rml = rightmost(left(obj));
-                set_child(rhs, rml);
-                set_child(rhs, right(obj));
-                set_parent(rml, rhs);
-                graph = [lhs(:); {rhs}];
-                
-            elseif isa(left(obj), 'yop.relation') && isa(right(obj), 'yop.relation') && isa(obj, 'yop.relation')
-                lhs = unnest(left(obj));
-                rhs = unnest(right(obj));
-                mdl = yop.relation(obj.name, obj.rows, obj.columns, obj.relation);
-                rml = rightmost(left(obj));
-                lmr = leftmost(right(obj));
-                set_child(mdl, rml);
-                set_child(mdl, lmr);
-                set_parent(rml, mdl);
-                set_parent(lmr, mdl);
-                graph = [lhs(:); {mdl}; rhs(:)];
+            elseif isa(obj, 'yop.relation') && isa(left(obj),'yop.relation') && ~isa(right(obj),'yop.relation')
+                r = yop.relation(obj.name, obj.rows, obj.columns, obj.relation);
+                set_child(r, right(left(obj)));
+                set_child(r, right(obj));
+                set_parent(right(left(obj)), r);
+                graph = [split(left(obj)); {r}];
                 
             else
-                yop.assert(false, yop.messages.graph_not_relation);
+                yop.assert(false, yop.messages.graph_not_valid);
                 
             end
         end
+        
+        function r = nlp_form(obj)
+            % changes the following form:
+            %     r
+            %    / \
+            %   e1 e2
+            % into:
+            %      r
+            %    /   \
+            %  e1-e2  0
+            if ~isa(obj, 'yop.relation') || isa(left(obj), 'yop.relation') || isa(right(obj), 'yop.relation')
+                yop.assert(false, yop.messages.graph_not_simple);
+                
+            else
+                e = yop.operation('-', obj.rows, obj.columns, @minus);
+                set_child(e, left(obj));
+                set_child(e, right(obj));
+                set_parent(left(obj), e);
+                set_parent(right(obj), e);
+                
+                z = yop.constant('0', obj.rows, obj.columns);
+                z.value = zeros(size(obj));
+                
+                r = yop.relation(obj.name, obj.rows, obj.columns, obj.relation);
+                set_child(r, e);
+                set_child(r, z);
+                set_parent(e, r);
+                set_parent(z, r);
+            end
+        end
+        
+        
     end
 end

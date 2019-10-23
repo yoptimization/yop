@@ -19,6 +19,14 @@ classdef messages < handle
        function msg = graph_not_relation()
            msg = 'Graph is not recognized as a relation.';
        end
+      
+       function msg = graph_not_valid()
+           msg = 'Graph does not describe a valid relation. Valid graphs are on the form: expr <= expr > expr == expr. Not allowed: (expr<=expr) > (expr==expr).';
+       end
+       
+       function msg = graph_not_simple()
+           msg = 'Cannot turn the provided graph into nlp-form because it is not a single relation with the expressions connected to it. Consider to do a "split()" before putting on nlp-form.';
+       end
        
        function msg = debug_operation_wrong_size()
            msg = '[Debug] Operation produced the wrong size of the node.';

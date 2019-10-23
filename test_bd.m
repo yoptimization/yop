@@ -18,7 +18,7 @@ u = yop.variable('u');
 [f, y] = goddardModel(t,x,u);
 
 %% 
-
+c1 = 0 <= x(1) <= x(2) <= 10;
 % Göra funktioner
 % Kopiera grafer 
 
