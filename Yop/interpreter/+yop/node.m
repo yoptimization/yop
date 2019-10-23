@@ -67,6 +67,18 @@ classdef node < handle
         function obj = forward(obj)
         end
         
+        function bool = isa_expression(obj)
+            % Test if the tree form an expression
+            bool = ~isa(obj, 'yop.relation');
+            k = length(obj.child);
+            while bool == true && k <= length(obj.child)
+                bool = bool && ...
+                    ~isa_relation(obj.child.elem(k).object) && ...
+                    isa_expression(obj.child.elem(k).object);
+                k = k+1;
+            end  
+        end
+        
     end
     
     methods % Default changing behavior
@@ -459,6 +471,9 @@ classdef node < handle
             c = 1;
         end
         
+        function log()
+        end
+        
         function r = lt(lhs, rhs)
             if isnumeric(lhs)
                 tmp = lhs.*ones(size(rhs));
@@ -590,6 +605,7 @@ classdef node < handle
         % ------------------------------------------------------------------------------------------------
         
     end
+    
     
     methods (Static)
 

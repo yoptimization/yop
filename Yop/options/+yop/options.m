@@ -75,15 +75,19 @@ classdef options < handle &  matlab.mixin.SetGetExactNames
             elseif ~isempty(singleton) && nargin == 0
                 obj = singleton;
                 
-            elseif isempty(singleton) && option_set == "default"
+            elseif isempty(singleton) && option_set == yop.options.name_default
                 set_default(obj);
                 singleton = obj;
                 
-            elseif ~isempty(singleton) && option_set == "default"
-                set_default(singleton)
+            elseif ~isempty(singleton) && option_set == yop.options.name_default
+                set_default(singleton);
                 obj = singleton;
                 
-            else % Load from file
+            elseif ~isempty(singleton)
+                tmp = load([fileparts(mfilename('fullpath')), '/stored/', option_set]);
+                replicate(singleton, tmp.obj);
+                obj = singleton;
+            else
                 tmp = load([fileparts(mfilename('fullpath')), '/stored/', option_set]);
                 obj = tmp.obj;
                 singleton = obj;
@@ -127,7 +131,25 @@ classdef options < handle &  matlab.mixin.SetGetExactNames
             % -- Arguments --
             %    obj : Handle to the option object
             
-            obj.symbolics = 'casadi';
+            obj.symbolics = yop.options.name_casadi;
+        end
+        
+        function obj = replicate(obj, model)
+            % REPLICATE Set obj properties to model object propeties.
+            %
+            % -- Syntax --
+            %    replicate(obj, model)
+            %    obj.replicate(model)
+            %
+            % -- Arguments --
+            %    obj : Handle to the object for which the properties should
+            %          change.
+            %    model : Handle to the object that you want replicated.
+            
+            prop = properties(obj);
+            for k = 1:length(prop)
+                obj.(prop{k}) = model.(prop{k});
+            end
         end
         
     end
@@ -158,7 +180,6 @@ classdef options < handle &  matlab.mixin.SetGetExactNames
             %    name : Name of the package to use.
             %         = 'symbolic math' % Use Matlab's symbolic math.
             %         = 'casadi'        % Use CasADi.
-            %    opts : Handle to the current options.
             %
             % -- Examples --
             %    yop.options.set_symbolics('symbolic math')
@@ -214,6 +235,10 @@ classdef options < handle &  matlab.mixin.SetGetExactNames
         
         function txt = name_casadi()
             txt = "casadi";
+        end
+        
+        function txt = name_default()
+            txt = "default";
         end
         
     end

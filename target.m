@@ -1,6 +1,6 @@
 %% Yop
 import yop.*
-yop.options.load('my_fav_opts.mat');
+yop.options('my_fav_opts.mat');
 
 % variable - tidskontinuerlig
 % parameter - parameter som ska optimeras

@@ -17,6 +17,9 @@ classdef variable < yop.node
                 
             end
             obj@yop.node(name, rows, columns);
+            
+            % This assignment should not be done here. It would inflict on
+            % the possibilty of creating yop with yop.
             obj.value = yop.variable.symbol(name, rows, columns);
         end
         
