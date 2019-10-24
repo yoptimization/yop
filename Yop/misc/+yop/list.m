@@ -9,6 +9,10 @@ classdef list < handle
         function obj = list()
         end
         
+        function obj = concatenate(obj, list)
+            obj.elem = [obj.elem, list.elem]; 
+        end
+        
         function obj = add(obj, e)
             new_elem = yop.list_elem(e);
             if isempty(obj.elem)

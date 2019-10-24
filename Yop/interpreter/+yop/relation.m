@@ -33,14 +33,14 @@ classdef relation < yop.node & yop.more_stupid_overhead
             
             if isa(obj, 'yop.relation') && ~isa(left(obj),'yop.relation') && ~isa(right(obj),'yop.relation')
                 % This is the end node.
-                graph = {obj};
+                graph = yop.list().add(obj);
                 
             elseif isa(obj, 'yop.relation') && isa(left(obj),'yop.relation') && ~isa(right(obj),'yop.relation')
                 r = yop.relation(obj.name, obj.rows, obj.columns, obj.relation);
-                set_child(r, right(left(obj)));
-                set_child(r, right(obj));
-                set_parent(right(left(obj)), r);
-                graph = [split(left(obj)); {r}];
+                r.set_child(obj.left.right);
+                r.set_child(obj.right);
+                obj.left.right.set_parent(r);
+                graph = obj.left.split.concatenate(yop.list().add(r));
                 
             else
                 yop.assert(false, yop.messages.graph_not_valid);
@@ -56,26 +56,37 @@ classdef relation < yop.node & yop.more_stupid_overhead
             % into:
             %      r
             %    /   \
-            %  e1-e2  0
+            % e1-e2   0
             if ~isa(obj, 'yop.relation') || isa(left(obj), 'yop.relation') || isa(right(obj), 'yop.relation')
                 yop.assert(false, yop.messages.graph_not_simple);
                 
             else
                 e = yop.operation('-', obj.rows, obj.columns, @minus);
-                set_child(e, left(obj));
-                set_child(e, right(obj));
-                set_parent(left(obj), e);
-                set_parent(right(obj), e);
+                e.set_child(obj.left);
+                e.set_child(obj.right);
+                obj.left.set_parent(e);
+                obj.right.set_parent(e);
                 
                 z = yop.constant('0', obj.rows, obj.columns);
                 z.value = zeros(size(obj));
                 
                 r = yop.relation(obj.name, obj.rows, obj.columns, obj.relation);
-                set_child(r, e);
-                set_child(r, z);
-                set_parent(e, r);
-                set_parent(z, r);
+                r.set_child(e);
+                r.set_child(z);
+                e.set_parent(r);
+                z.set_parent(r);
             end
+        end
+        
+        function bool = isa_box(obj)
+            % Tests if the following structure (r=relation, e=expression):
+            %      r
+            %     / \
+            %    e1 e2
+            % is a box constraint.
+            % Notice that it doesn't test if the strucure is correct.
+            bool = isa_variable(obj.left) && isa(obj.right, 'yop.constant') || ...
+                isa(obj.left, 'yop.constant') && isa_variable(obj.right);
         end
         
         
