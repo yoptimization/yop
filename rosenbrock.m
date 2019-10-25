@@ -16,7 +16,7 @@ c = A*x <= b;
 ceq = Aeq*x == b;
 
 %% Vill kunna skriva
-f.split.isa_box;
+c.split.isa_box;
 % behöver ändra list-klassen.
 
 %%
@@ -47,3 +47,9 @@ full(res.x)
 f_object = casadi.Function('objective', {x.evaluate}, {f.evaluate});
 fun = @(x) full(f_object(x));
 x_opt = fmincon(fun, x0.evaluate, A.evaluate, b.evaluate, Aeq.evaluate, beq.evaluate);
+
+
+
+
+
+

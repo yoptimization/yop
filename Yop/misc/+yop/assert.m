@@ -1,14 +1,8 @@
-function assert(cond, varargin)
+function assert(cond, msg)
 
-persistent ip
-if isempty(ip)
-    ip = inputParser;
-    ip.FunctionName = 'yop.assert';
-    ip.PartialMatching = false;
-    ip.CaseSensitive = true;
-    ip.addOptional('msg', 'Assertion failed.', @(x) true);
+if nargin == 1
+    msg = 'Assertion failed.';
 end
-ip.parse(varargin{:});
 
-builtin('assert', cond, ['Yop: ' ip.Results.msg]);
+builtin('assert', cond, ['Yop: ' msg]);
 end

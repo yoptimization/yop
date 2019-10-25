@@ -11,8 +11,8 @@ classdef node < handle
     properties (SetAccess=protected)
         rows    % Number of rows.
         columns % Number of columns.
-        parent  % Parent nodes. Is proteced beacuse it needs a listener.
-        child   % Child nodes.
+        parents  % Parent nodes. Is proteced beacuse it needs a listener.
+        children   % Child nodes.
     end
     
     properties (SetAccess=private, GetAccess=private)
@@ -31,27 +31,35 @@ classdef node < handle
             obj.name = name;
             obj.rows = rows;
             obj.columns = columns;
-            obj.parent = yop.node_listener_list();
-            obj.child = yop.list();
+            obj.parents = yop.node_listener_list();
+            obj.children = yop.list();
+        end
+        
+        function p = parent(obj, index)
+            p = obj.parents.object(index);
+        end
+        
+        function c = child(obj, index)
+            c = obj.children.object(index);
         end
         
         function obj = set_parent(obj, parent)
             listener = addlistener(obj, 'value', 'PostSet', @parent.clear);
-            add(obj.parent, parent, listener);
+            obj.parents.add(parent, listener);
         end
         
         function obj = remove_parent(obj, parent)
-            remove(obj.parent, parent);
+            obj.parents.remove(parent);
         end
         
         function obj = set_child(obj, child)
             % Lyssnare?
-            add(obj.child, child);
+            obj.children.add(child);
         end
         
         function obj = remove_child(obj, child)
             % Ta bort lyssnare.
-            remove(obj.child, child);
+            obj.children.remove(child);
         end
         
         function clear(obj, ~, ~)
@@ -77,11 +85,15 @@ classdef node < handle
             %     r   e
             %    /\
             %   e  e
-            if isa(obj, 'yop.relation') && ~isa(obj.left, 'yop.relation') && ~isa(obj.right, 'yop.relation')
+            if isa(obj, 'yop.relation') && ...
+                    ~isa(obj.left, 'yop.relation') && ...
+                    ~isa(obj.right, 'yop.relation')
                 % This is the end node.
                 bool = true;
                 
-            elseif isa(obj, 'yop.relation') && isa(obj.left, 'yop.relation') && ~isa(obj.right,'yop.relation')
+            elseif isa(obj, 'yop.relation') && ...
+                    isa(obj.left, 'yop.relation') && ...
+                    ~isa(obj.right,'yop.relation')
                 bool = obj.left.isa_valid_relation();
                 
             else
@@ -101,17 +113,17 @@ classdef node < handle
             else % has to be a subs_operation and therefore it's
                  % sufficient to look at the first argument and see if that
                  % tree only containts variables or subs_operations
-                bool = obj.child.elem(1).object.isa_variable();
+                bool = obj.child(1).isa_variable();
                 
             end            
         end
         
         function l = left(obj)
-            l = obj.child.elem(1).object;
+            l = obj.child(1);
         end
         
         function l = right(obj)
-            l = obj.child.elem(2).object;
+            l = obj.child(2);
         end
         
         function r = leftmost(obj)
@@ -252,14 +264,14 @@ classdef node < handle
             
             function recursion(node)
                 if isa(node, 'yop.operation') || isa(node, 'yop.relation')
-                    for k=1:length(node.child.elem)
-                        if ~visited.contains(node.child.elem(k).object)
-                            recursion(node.child.elem(k).object);
+                    for k=1:length(node.children)
+                        if ~visited.contains(node.child(k))
+                            recursion(node.child(k));
                         end
                     end
                 end
-                add(visited, node);
-                add(ordering, node);
+                visited.add(node);
+                ordering.add(node);
             end
             
             recursion(obj);
@@ -270,8 +282,8 @@ classdef node < handle
             if isempty(obj.eval_order)
                 obj.order_nodes();
             end
-            for k=1:length(obj.eval_order.elem)
-                obj.eval_order.elem(k).object.forward();
+            for k=1:length(obj.eval_order)
+                obj.eval_order.object(k).forward();
             end
             value = obj.value;
         end

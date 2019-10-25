@@ -19,6 +19,7 @@ u = yop.variable('u');
 
 %% 
 c1 = 0 <= x(1) <= x(2) <= 10;
+
 % Göra funktioner
 % Kopiera grafer 
 

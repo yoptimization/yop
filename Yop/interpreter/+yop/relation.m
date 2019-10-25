@@ -6,9 +6,9 @@ classdef relation < yop.node & yop.more_stupid_overhead
         end
         
         function obj = forward(obj)
-            args = cell(size(obj.child.elem));
+            args = cell(size(obj.children));
             for k=1:size(args,2)
-                args{k} = obj.child.elem(k).object.value;
+                args{k} = obj.child(k).value;
             end
             obj.value = obj.relation(args{:});
         end
@@ -40,7 +40,8 @@ classdef relation < yop.node & yop.more_stupid_overhead
                 r.set_child(obj.left.right);
                 r.set_child(obj.right);
                 obj.left.right.set_parent(r);
-                graph = obj.left.split.concatenate(yop.list().add(r));
+                graph = obj.left.split.add(r);
+                %  graph = obj.left.split.concatenate(yop.list().add(r));
                 
             else
                 yop.assert(false, yop.messages.graph_not_valid);
@@ -57,6 +58,14 @@ classdef relation < yop.node & yop.more_stupid_overhead
             %      r
             %    /   \
             % e1-e2   0
+            %
+            % Ändra operator också.
+            % Denna funktion borde heta general_form()
+            % implementationen borde vara att man kan ta vilket uttryck som
+            % helt, sedan splittas det, görs till generell form och sedan
+            % ändras operatorn:
+            % nodes = node.nlp_form => node.split.general_form ändra op.
+            % !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             if ~isa(obj, 'yop.relation') || isa(left(obj), 'yop.relation') || isa(right(obj), 'yop.relation')
                 yop.assert(false, yop.messages.graph_not_simple);
                 

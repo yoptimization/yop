@@ -6,6 +6,7 @@ classdef debug < handle
     
     methods
         function obj = debug(enable)
+            % DEBUG Runtime debugging
             % enable by: yop.debug(true);
             % disable: yop.debug(false);
             % test if enabled: yop.debug().enabled
