@@ -6,24 +6,32 @@ yop.options('my_fav_opts.mat');
 % parameter - parameter som ska optimeras
 % constant - konstant vars värde man kan ändra mellan körningar
 
-t_0 = parameter('t_0');
-t_f = parameter('t_f');
+% t_0 = parameter('t_0');
+% t_f = parameter('t_f');
+% t = variable('t');
+% x = variable('x', [2, 1]);
+% u = variable('u');
+% l = constant('l', [1, 1]);
+% alpa = signal('alpha', @(t) f(t));
+
+t_0 = varible('t_0');
+t_f = varible('t_f');
 t = variable('t');
-x = variable('x', 2, 1);
+x = variable('x', [2,1]);
 u = variable('u');
-l = constant('l', 1, 1);
-alpa = signal('alpha', @(t) f(t));
+l = varible('l', [1,1]);
+alpa = varible('alpha');
 
 [ode, cart] = trolley_model(t, x, u);
-
-constraint1 = some_expression <= some_other_expression;
 
 % Interface mot alla matlabs lösare?
 % Beskriva ocp-lösaren i yop mha yop? Dvs. ställa upp det olinjära
 % problemet mha yop? förs nlp-lösare sedan ocp-lösare
-ocp = optimization_problem('t0', t_0, 'tf', t_f, 'state', x, 'control', u);
+ocp = optimization_problem('t0', t_0, 'tf', t_f, 'state', x, 'control', u, 'parameter', p);
 
 ocp.minimize( 1/2*integral( cart.acceleration^2 ) );
+
+constraint1 = some_expression <= some_other_expression;
 
 ocp.subject_to( ...
     dot(x) == ode, ...
@@ -38,6 +46,7 @@ ocp.subject_to( ...
     );
 
 l.value = 2;
+alpha.signal =  @(t) f(t);
 
 ocp.method = 'direct_collocation';
 % help ocp.set.method

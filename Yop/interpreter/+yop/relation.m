@@ -1,7 +1,8 @@
 classdef relation < yop.node & yop.more_stupid_overhead
     methods
         function obj = relation(name, rows, columns, relation)
-            obj@yop.node(name, rows, columns);
+            obj@yop.node();
+            obj.init(name, rows, columns)
             obj.relation = relation;
         end
         
@@ -97,8 +98,8 @@ classdef relation < yop.node & yop.more_stupid_overhead
             %    e1 e2
             % is a box constraint.
             % Notice that it doesn't test if the strucure is correct.
-            bool = isa_variable(obj.left) && isa(obj.right, 'yop.constant') || ...
-                isa(obj.left, 'yop.constant') && isa_variable(obj.right);
+            bool = obj.left.isa_variable && isa(obj.right, 'yop.constant') || ...
+                isa(obj.left, 'yop.constant') && obj.right.isa_variable;
         end
         
         
