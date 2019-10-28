@@ -17,9 +17,6 @@ classdef variable < yop.node
                 
             end
             obj@yop.node(name, rows, columns);
-            
-            % This assignment should not be done here. It would inflict on
-            % the possibilty of creating yop with yop.
             obj.value = yop.variable.symbol(name, rows, columns);
         end
         
@@ -37,8 +34,16 @@ classdef variable < yop.node
                 end
                 
             elseif yop.options.get_symbolics == yop.options.name_casadi
-                v = casadi.MX.sym(name, rows, columns);
-                
+                v = [];
+                for c=1:columns
+                    v_r = [];
+                    for r=1:rows
+                        name_rc = [name '_(' num2str(r) ',' num2str(c) ')'];
+                        v_rc = casadi.MX.sym(name_rc, 1, 1);
+                        v_r = [v_r; v_rc];
+                    end
+                    v = [v, v_r];
+                end
             end
         end
         
