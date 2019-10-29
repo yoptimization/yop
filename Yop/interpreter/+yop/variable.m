@@ -2,22 +2,17 @@ classdef variable < yop.node
     
     methods
         
-        function obj = variable(name, rows, columns)
+        function obj = variable(name, size)
             if nargin == 0
-                name = 'v';
-                rows = 1;
-                columns = 1;
+                name = yop.keywords().default_name_variable;
+                size = [1, 1];
                 
             elseif nargin == 1
-                rows = 1;
-                columns = 1;
-                
-            elseif nargin == 2
-                columns = 1;
+                size = [1, 1];
                 
             end
-            obj@yop.node(name, rows, columns);
-            obj.value = yop.variable.symbol(name, rows, columns);
+            obj@yop.node(name, size);
+            obj.value = yop.variable.symbol(name, size);
         end
         
         function indices = get_indices(obj)
@@ -31,26 +26,18 @@ classdef variable < yop.node
     
     methods (Static)
         
-        function v = symbol(name, rows, columns)
+        function v = symbol(name, size)
             if yop.options.get_symbolics == yop.options.name_symbolic_math
                 
-                if rows==1 && columns==1
+                if isequal(size, [1,1])
                     v = sym(name, 'real');
                 else
-                    v = sym(name, [rows, columns], 'real');
+                    v = sym(name, size, 'real');
                 end
                 
             elseif yop.options.get_symbolics == yop.options.name_casadi
-                v = [];
-                for c=1:columns
-                    v_r = [];
-                    for r=1:rows
-                        name_rc = [name '_(' num2str(r) ',' num2str(c) ')'];
-                        v_rc = casadi.MX.sym(name_rc, 1, 1);
-                        v_r = [v_r; v_rc];
-                    end
-                    v = [v, v_r];
-                end
+                v = casadi.MX.sym(name, size(1), size(2));
+                
             end
         end
         

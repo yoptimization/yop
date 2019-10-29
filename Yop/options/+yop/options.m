@@ -69,23 +69,23 @@ classdef options < handle &  matlab.mixin.SetGetExactNames
             
             persistent singleton
             if isempty(singleton) && nargin == 0
-                set_default(obj);
+                obj.set_default;
                 singleton = obj;
                 
             elseif ~isempty(singleton) && nargin == 0
                 obj = singleton;
                 
             elseif isempty(singleton) && option_set == yop.options.name_default
-                set_default(obj);
+                obj.set_default;
                 singleton = obj;
                 
             elseif ~isempty(singleton) && option_set == yop.options.name_default
-                set_default(singleton);
+                singleton.set_default;
                 obj = singleton;
                 
             elseif ~isempty(singleton)
                 tmp = load([fileparts(mfilename('fullpath')), '/stored/', option_set]);
-                replicate(singleton, tmp.obj);
+                singleton.replicate(tmp.obj);
                 obj = singleton;
             else
                 tmp = load([fileparts(mfilename('fullpath')), '/stored/', option_set]);

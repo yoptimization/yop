@@ -28,6 +28,14 @@ classdef messages < handle
            msg = 'Cannot turn the provided graph into nlp-form because it is not a single relation with the expressions connected to it. Consider to do a "split()" before putting on nlp-form.';
        end
        
+       function msg = optimization_variable_missing()
+           msg = 'An optimization variable must be provided.';
+       end
+       
+       function msg = optimization_column_vector()
+           msg = 'The optimization variable must be a column vector.';
+       end
+       
        function msg = debug_operation_wrong_size()
            msg = '[Debug] Operation produced the wrong size of the node.';
        end

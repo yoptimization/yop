@@ -33,9 +33,13 @@ classdef debug < handle
     
     methods (Static)        
         
-        function validate_size(is, should)
+        function validate_size(is, operation, varargin)
             if yop.debug().enabled
-                if ~size(is)==size(should)
+                for k=1:length(varargin)
+                    varargin{k} = ones(size(varargin{k}));
+                end
+                if ~isequal(size(is), size(operation(varargin{:})))
+                    yop.assert(false, yop.messages.debug_operation_wrong_size);
                 end
             end                        
         end

@@ -1,7 +1,7 @@
 classdef relation < yop.node & yop.more_stupid_overhead
     methods
-        function obj = relation(name, rows, columns, relation)
-            obj@yop.node(name, rows, columns);
+        function obj = relation(name, size, relation)
+            obj@yop.node(name, size);
             obj.relation = relation;
         end
         
@@ -36,7 +36,7 @@ classdef relation < yop.node & yop.more_stupid_overhead
                 graph = yop.node_list().add(obj);
                 
             elseif isa(obj, 'yop.relation') && isa(obj.left, 'yop.relation') && ~isa(obj.right, 'yop.relation')
-                r = yop.relation(obj.name, obj.rows, obj.columns, obj.relation);
+                r = yop.relation(obj.name, size(obj), obj.relation);
                 r.set_child(obj.left.right);
                 r.set_child(obj.right);
                 obj.left.right.set_parent(r);
