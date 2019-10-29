@@ -20,11 +20,18 @@ classdef variable < yop.node
             obj.value = yop.variable.symbol(name, rows, columns);
         end
         
+        function indices = get_indices(obj)
+            % Returns the indices in the vector variable
+            % Observe that it doesn't test if it is a vector valued
+            % variable or scalar.
+            indices = 1:length(obj);
+        end
+        
     end
     
     methods (Static)
         
-        function v = symbol(name, rows, columns)       
+        function v = symbol(name, rows, columns)
             if yop.options.get_symbolics == yop.options.name_symbolic_math
                 
                 if rows==1 && columns==1

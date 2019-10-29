@@ -48,9 +48,9 @@ classdef node_list < yop.list
         end
         
         function value = evaluate(obj)
-            value = yop.list();
+            value = [];
             for k=1:length(obj)
-                value.add(obj.object(k).evaluate);
+                value = [value; obj.object(k).evaluate];
             end
         end
         
