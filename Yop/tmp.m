@@ -1,14 +1,26 @@
-x = yop.constant('x', [2,1]);
-y = yop.constant('y', [2,1]);
-z = yop.constant('z', [2,1]);
+%%
+clear;
+yop.debug(true);
+x   = yop.variable('x', [2, 1]);
+x0  = yop.constant('x0', [2, 1]);
+A   = yop.constant('A', [1, 2]);
+b   = yop.constant('b');
+Aeq = yop.constant('Aeq', [1, 2]);
+beq = yop.constant('beq');
+x1 = x(1);
+x2 = x(2);
 
-x.value = 1*[1; 1];
-y.value = 2*[1; 1];
-z.value = 3*[1; 1];
+% Problem parametrization
+x0.value  = [0.5; 0];
+A.value   = [1, 2];
+b.value   = 1;
+Aeq.value = [2,1];
+beq.value = 1;
 
-lb = yop.node('lb', [6,1]);
-lb.value = -inf(6,1);
-lb(1:2) = x;
-lb(3:4) = y;
-% lb(5:6) = z;
-lb.evaluate()
+nlp = yop.nlp('variable', x);
+nlp.minimize( 100*(x2-x1^2)^2 + (1-x1)^2 );
+nlp.subject_to( A*x <= b ); %  Aeq*x == b
+
+res = nlp.solve(x0);
+full(res.x)
+

@@ -13,7 +13,6 @@ classdef relation < yop.node & yop.more_stupid_overhead
             obj.value = obj.relation(args{:});
         end
         
-        
         function graph = split(obj)
             % parsing the following structure
             %         r3
@@ -43,7 +42,7 @@ classdef relation < yop.node & yop.more_stupid_overhead
                 graph = obj.left.split.add(r);
                 
             else
-                yop.assert(false, yop.messages.graph_not_valid);
+                yop.assert(false, yop.messages.graph_not_valid_relation);
                 
             end
         end
@@ -70,7 +69,6 @@ classdef relation < yop.node & yop.more_stupid_overhead
         end
         
         function r = nlp_form(obj)
-            % Requires graph is on general form.
             % If not on nlp form creates a new graph according to: 
             %  e <  0  -->   e <= 0
             %  e <= 0   =    e <= 0
@@ -88,94 +86,6 @@ classdef relation < yop.node & yop.more_stupid_overhead
                 
             end                
         end
-        
-        function bool = isa_box(obj)
-            % Tests if the following structure (r=relation, e=expression):
-            %      r
-            %     / \
-            %    e1 e2
-            % is a box constraint.
-            % Notice that it doesn't test if the strucure is correct.
-            bool = obj.left.isa_variable && isa(obj.right, 'yop.constant') || ...
-                isa(obj.left, 'yop.constant') && obj.right.isa_variable;
-        end
-        
-        function bool = isa_upper_bound(obj)
-            % Tests if a box constraint is an upper bound that is:
-            % test if the object is one of the following:
-            %   v <= c
-            %   c >= v
-            bool = obj.isa_upper_type1 || obj.isa_upper_type2;
-        end
-        
-        function bool = isa_upper_type1(obj)
-            % test if it is a box constraint of the following type:
-            %   variable <= constant
-            bool = obj.isa_type1_box_constraint(@lt, @le);
-        end
-        
-        function bool = isa_upper_type2(obj)
-            % test if it is a box constraint of the following type:
-            %    constant >= variable
-            bool = obj.isa_type2_box_constraint(@gt, @ge);
-        end
-        
-        function bool = isa_lower_bound(obj)
-            % Tests if a box constraint is an upper bound that is:
-            % test if the object is one of the following:
-            %   v >= c
-            %   c <= v
-            bool = obj.isa_lower_type1 || obj.isa_lower_type2;
-        end
-        
-        function bool = isa_lower_type1(obj)
-            % test if it is a box constraint of the following type:
-            %   variable >= constant
-            bool = obj.isa_type1_box_constraint(@gt, @ge);
-        end
-        
-        function bool = isa_lower_type2(obj)
-            % test if it is a box constraint of the following type:
-            %    constant <= variable
-            bool = obj.isa_type2_box_constraint(@lt, @le);
-        end
-        
-        function bool = isa_equality_type1(obj)
-            % test if it is a box constraint of the following type:
-            %   variable == constant
-            bool = obj.isa_type1_box_constraint(@eq, @eq);
-        end
-        
-        function bool = isa_equality_type2(obj)
-            % test if it is a box constraint of the following type:
-            %    constant == variable
-            bool = obj.isa_type2_box_constraint(@eq, @eq);
-        end
-        
-        function bool = isa_type1_box_constraint(obj, op1, op2)
-            % test if it is a box constraint of the following type:
-            %   varaible [relation] constant.
-            %   example upper bound: v <= c
-            %   example lower bound: v >= c
-            bool = isa_box(obj) && ...
-                isa_variable(obj.left) && ...
-                isa(obj.right, 'yop.constant') && ...
-                (isequal(obj.relation, op1) || isequal(obj.relation, op2));
-        end
-        
-        function bool = isa_type2_box_constraint(obj, op1, op2)
-            % test if it is a box constraint of the following type:
-            %   constant [relation] varaible.
-            %   example lower bound: c <= v
-            %   example upper bound: c >= v
-            bool = isa_box(obj) && ...
-                isa(obj.left, 'yop.constant') && ...
-                isa_variable(obj.right) && ...
-                (isequal(obj.relation, op1) || isequal(obj.relation, op2));
-        end
-        
-        
-        
         
     end
 end

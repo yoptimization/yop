@@ -16,12 +16,12 @@ classdef messages < handle
            msg = ['Option "' option_passed '" passed to ' fn_name ' is not recognized as a valid option'];
        end
        
-       function msg = graph_not_relation()
-           msg = 'Graph is not recognized as a relation.';
-       end
+%        function msg = graph_not_relation()
+%            msg = 'Graph is not recognized as a relation.';
+%        end
       
-       function msg = graph_not_valid()
-           msg = 'Graph does not describe a valid relation. Valid graphs are on the form: expr <= expr > expr == expr. Not allowed: (expr<=expr) > (expr==expr).';
+       function msg = graph_not_valid_relation()
+           msg = 'Graph does not describe a valid relation. Valid graphs can be wrtitten similar to: expr <= expr > expr == expr. Not allowed: (expr<=expr) > (expr==expr).';
        end
        
        function msg = graph_not_simple()
@@ -32,7 +32,7 @@ classdef messages < handle
            msg = 'An optimization variable must be provided.';
        end
        
-       function msg = optimization_column_vector()
+       function msg = optimization_not_column_vector()
            msg = 'The optimization variable must be a column vector.';
        end
        

@@ -4,7 +4,6 @@ classdef nlp < handle
         upper_bound
         lower_bound
         objective
-        constraints
         equality_constraints
         inequality_constraints
     end
@@ -22,13 +21,17 @@ classdef nlp < handle
             yop.assert(~isempty(ip.Results.variable), ...
                 yop.messages.optimization_variable_missing);
             yop.assert(size(ip.Results.variable,2)==1, ...
-                yop.messages.optimization_column_vector);
+                yop.messages.optimization_not_column_vector);
             
             obj.variable = ip.Results.(yop.keywords().variable);
-            obj.upper_bound =  yop.node('ub', size(x));
-            obj.lower_bound = yop.node('lb', size(x));
-            obj.upper_bound.value =  inf(size(x));
-            obj.lower_bound.value = -inf(size(x));
+            obj.upper_bound = yop.node('ub', size(obj.variable));
+            obj.lower_bound = yop.node('lb', size(obj.variable));
+            obj.upper_bound.value =  inf(size(obj.variable));
+            obj.lower_bound.value = -inf(size(obj.variable));
+        end
+        
+        function present(obj)
+            % Alt överlagra disp/display.
         end
         
         function obj = minimize(obj, f)
@@ -40,57 +43,64 @@ classdef nlp < handle
         end
         
         function obj = subject_to(obj, varargin)
-            obj.constraints = yop.node_list();
-            for k=1:length(varargin)
-                obj.constraints.add(varargin{k});
+            [box, eq, ieq] = yop.constraint.classify(varargin{:});
+            obj.add_box(box);
+            
+            if isempty(eq.elements)
+                obj.equality_constraints = yop.node('empty', [0,0]);
+            else
+                obj.equality_constraints = vertcat(eq.left.elements.object);
+            end
+            
+            if isempty(ieq.elements)
+                obj.inequality_constraints = yop.node('empty', [0,0]);
+            else
+                obj.inequality_constraints = vertcat(ieq.left.elements.object);
             end
         end
         
-        function obj = solve(obj)
-            [box, nonlin] = obj.constraints.split.sort(@isa_box, @(x) ~isa_box(x));
-            obj.parse_box_constraints(box);
-            [eq, neq] = nonlin.general_form.nlp_form.sort( ...
-                @(x)isequal(x.relation, @eq), ...
-                @(x)isequal(x.relation, @le) ...
-                );
-            
-        end
-        
-        function obj = parse_box_constraints(obj, box)
-            % Gör för ett enda box constraint och lägg loopen där
-            % bivillkoren tas emot.
+        function obj = add_box(obj, box)
             for k=1:length(box)
+                index = yop.box_constraint.get_indices(box.object(k));
+                bd = yop.box_constraint.get_bound(box.object(k));
                 
-                if box.object(k).isa_upper_type1
-                    obj.upper_bound(box.object(k).left.get_indices) = ...
-                        box.object(k).right;
+                if yop.box_constraint.isa_upper_bound(box.object(k))
+                    obj.upper_bound(index) = bd;
                     
-                elseif box.object(k).isa_upper_type2
-                    obj.upper_bound(box.object(k).right.get_indices) = ...
-                        box.object(k).left;
+                elseif yop.box_constraint.isa_lower_bound(box.object(k))
+                    obj.lower_bound(index) = bd;
                     
-                elseif box.object(k).isa_lower_type1
-                    obj.lower_bound(box.object(k).left.get_indices) = ...
-                        box.object(k).right;
-                    
-                elseif box.object(k).isa_lower_type2
-                    obj.lower_bound(box.object(k).right.get_indices) = ...
-                        box.object(k).left;
-                    
-                elseif box.object(k).isa_equality_type1
-                    obj.upper_bound(box.object(k).left.get_indices) = ...
-                        box.object(k).right;
-                    obj.lower_bound(box.object(k).left.get_indices) = ...
-                        box.object(k).right;
-                    
-                elseif box.object(k).isa_equality_type2
-                    obj.upper_bound(box.object(k).right.get_indices) = ...
-                        box.object(k).left;
-                    obj.lower_bound(box.object(k).right.get_indices) = ...
-                        box.object(k).left;
-                    
+                elseif yop.box_constraint.isa_equality(box.object(k))    
+                    obj.upper_bound(index) = bd;
+                    obj.lower_bound(index) = bd;
                 end
             end
+        end
+        
+        function results = solve(obj, x0)
+            ip = inputParser;
+            ip.FunctionName = 'nlp.solve';
+            ip.PartialMatching = false;
+            ip.KeepUnmatched = false;
+            ip.CaseSensitive = true;
+            
+            nlp = struct;
+            nlp.x = obj.variable.evaluate;
+            nlp.f = obj.objective.evaluate;
+            nlp.g = [...
+                obj.equality_constraints.evaluate; ...
+                obj.inequality_constraints.evaluate ...
+                ];
+            
+            yoptimizer = casadi.nlpsol('yoptimizer', 'ipopt', nlp);
+            res = yoptimizer( ...
+                'x0', x0, ...
+                'ubx', obj.upper_bound.evaluate, ...
+                'lbx', obj.lower_bound.evaluate, ...
+                'ubg', [zeros(size(obj.equality_constraints)); zeros(size(obj.inequality_constraints))], ...
+                'lbg', [zeros(size(obj.equality_constraints)); -inf(size(obj.inequality_constraints))]);
+            results = full(res.x);
+            
         end
         
     end
