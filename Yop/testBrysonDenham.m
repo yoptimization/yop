@@ -1,27 +1,44 @@
 import yop.*
 
-nx = 2;
-nu = 1;
-ts = YopVar('t');
-xs1 = YopVar('x1', 1);
-xs2 = YopVar('x2', 1);
-xs = [xs1; xs2];
-us = YopVar('u');
+t_0 = parameter('t0');
+t_f = parameter('tf');
+t = variable('t');
+x = variable('x', [2, 1]);
+u = variable('u');
 
-[ode, cart] = trolleyModel(ts, xs, us);
+[ode, cart] = trolleyModel(t, x, u);
 
 J = 1/2*integral(cart.acceleration^2);
-J = tf( xs(1)^2 + (xs(2)+1)^2 ) + 1/2*integral(cart.acceleration^2);
-% j1 = 1000000*t_i( xs(1)^2, 0.3 );
-% J = j1 + 1/2*integral(cart.acceleration^2);
-c1 = cart.position(t0) == 0;
-c2 = cart.speed(t0) == 1;
-c3 = cart.position(tf) == 0;
-c4 = cart.speed(tf) == 1;
-c5 = cart.position <= 1/9;
-c6 = 0 == t0 <= tf == 1+xs(1);
 
-constraints = {c1, c2, c3, c4, c5, c6};
+c0 =  der(x) == trolleyModel(t,x,u);
+c1 =  cart.position.t0  == 0;
+c2 =  t0(cart.speed)    == 1;
+c3 =  tf(cart.position) == 0;
+c4 =  cart.speed.tf     == 1;
+c5 =  cart.position     <= 1/9;
+c6 =  0 == t_0 <= t_f == 1+x(1);
+
+user_constraints = {c1, c0, c2, c3, c4, c5, c6};
+
+constraints = yop.node_list().add_array(user_constraints);
+[dynamics, box_and_path] = constraints.sort("first", ...
+    @yop.dynamic_optimization.dynamics, ...
+    @(x) true ... @(x) ~yop.dynamic_optimization.dynamics(x) ...
+    );
+
+initial = yop.node_list();
+final = yop.node_list();
+rest = yop.node_list(); % Behöver ett sätt för att kunna dela in i resten också.
+for k=1:length(box_and_path)
+    node = box_and_path.object(k);
+    [ik, fk] = yop.node.sort(node, "first", ...
+        @(x) isequal(x.operation, @t0), ...
+        @(x) isequal(x.operation, @tf) ...
+        );
+    initial.concatenate(ik);
+    final.concatenate(fk);
+end
+
 
 %%
 

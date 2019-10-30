@@ -1,8 +1,4 @@
-classdef operation < yop.node & yop.stupid_overhead
-    properties
-        timepoint
-        index
-    end
+classdef operation < yop.node
     methods
         
         function obj = operation(name, size, operation)

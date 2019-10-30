@@ -2,6 +2,7 @@ classdef node < handle
     
     properties
         name % Name of the node.
+        operation % operation possibly associated with node.
     end
     
     properties (SetObservable, AbortSet)
@@ -99,7 +100,7 @@ classdef node < handle
             
         end
         
-        function bool = isa_variable(obj)            
+        function bool = isa_symbol(obj)            
             if isa(obj, 'yop.variable')
                 bool = true;
                 
@@ -109,7 +110,7 @@ classdef node < handle
             else % has to be a subs_operation and therefore it's
                  % sufficient to look at the first argument and see if that
                  % tree only containts variables or subs_operations
-                bool = obj.child(1).isa_variable();
+                bool = obj.child(1).isa_symbol();
                 
             end            
         end
@@ -123,7 +124,7 @@ classdef node < handle
         end
         
         function r = leftmost(obj)
-            if isa_variable(obj)
+            if isa_symbol(obj)
                 r = obj;
             else
                 r = obj.left.leftmost();
@@ -131,12 +132,14 @@ classdef node < handle
         end
         
         function r = rightmost(obj)
-            if isa_variable(obj)
+            if isa_symbol(obj)
                 r = obj;
             else
                 r = obj.right.rightmost();
             end
         end
+        
+        
         
     end
     
@@ -567,6 +570,41 @@ classdef node < handle
             yop.debug.validate_size(z, @dot, x, y);
         end
         
+        function y = integral(x)
+            x = yop.node.typecast(x);
+            y = yop.operation('integral', size(x), @integral);
+            y.set_child(x);
+            x.set_parent(y);
+        end
+        
+        function y = t0(x)
+            x = yop.node.typecast(x);
+            y = yop.operation('t0', size(x), @t0);
+            y.set_child(x);
+            x.set_parent(y);
+        end
+        
+        function y = tf(x)
+            x = yop.node.typecast(x);
+            y = yop.operation('tf', size(x), @tf);
+            y.set_child(x);
+            x.set_parent(y);
+        end
+        
+        function y = der(x)
+            x = yop.node.typecast(x);
+            y = yop.operation('der', size(x), @der);
+            y.set_child(x);
+            x.set_parent(y);
+        end
+        
+        function y = alg(x)
+            x = yop.node.typecast(x);
+            y = yop.operation('alg', size(x), @alg);
+            y.set_child(x);
+            x.set_parent(y);
+        end
+        
         function z = cross(x, y)
             
         end
@@ -729,6 +767,41 @@ classdef node < handle
                 || ( size(x,1)==size(y,1) ) ...     Same number of rows
                 || size(x,1)==1 && size(y,2)==1 ... One row, one column
                 || size(x,2)==1 && size(y,1)==1;
+        end
+        
+        function varargout = sort(obj, mode, varargin)
+            % Search tree in order to find subtrees mathching the criterias
+            % in varargin.
+            
+            visited = yop.list;
+            varargout = cell(size(varargin));
+            for n=1:length(varargout)
+                varargout{n} = yop.node_list();
+            end
+            
+            function recursion(node)
+                match = false;
+                for k=1:length(varargin)
+                    criteria = varargin{k};
+                    if criteria(node)
+                        varargout{k}.add(node);
+                        match = true; 
+                        if mode=="first"
+                            break
+                        end
+                    end
+                end                
+                visited.add(node);
+                if ~match
+                    for k=1:length(node.children)
+                        if ~visited.contains(node.child(k))
+                            recursion(node.child(k))
+                        end
+                    end
+                end
+            end
+            
+            recursion(obj);
         end
         
     end

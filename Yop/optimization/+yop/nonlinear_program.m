@@ -1,4 +1,4 @@
-classdef nlp < handle
+classdef nonlinear_program < handle
     properties
         variable
         upper_bound
@@ -8,9 +8,9 @@ classdef nlp < handle
         inequality_constraints
     end
     methods
-        function obj = nlp(varargin)
+        function obj = nonlinear_program(varargin)
             ip = inputParser;
-            ip.FunctionName = 'nlp';
+            ip.FunctionName = 'nonlinear_program';
             ip.PartialMatching = false;
             ip.KeepUnmatched = false;
             ip.CaseSensitive = true;
@@ -43,7 +43,7 @@ classdef nlp < handle
         end
         
         function obj = subject_to(obj, varargin)
-            [box, eq, ieq] = yop.constraint.classify(varargin{:});
+            [box, eq, ieq] = yop.nonlinear_programming.classify(varargin{:});
             obj.add_box(box);
             
             if isempty(eq.elements)
@@ -61,16 +61,16 @@ classdef nlp < handle
         
         function obj = add_box(obj, box)
             for k=1:length(box)
-                index = yop.box_constraint.get_indices(box.object(k));
-                bd = yop.box_constraint.get_bound(box.object(k));
+                index = yop.nonlinear_programming.get_indices(box.object(k));
+                bd = yop.nonlinear_programming.get_bound(box.object(k));
                 
-                if yop.box_constraint.isa_upper_bound(box.object(k))
+                if yop.nonlinear_programming.isa_upper_bound(box.object(k))
                     obj.upper_bound(index) = bd;
                     
-                elseif yop.box_constraint.isa_lower_bound(box.object(k))
+                elseif yop.nonlinear_programming.isa_lower_bound(box.object(k))
                     obj.lower_bound(index) = bd;
                     
-                elseif yop.box_constraint.isa_equality(box.object(k))    
+                elseif yop.nonlinear_programming.isa_equality(box.object(k))    
                     obj.upper_bound(index) = bd;
                     obj.lower_bound(index) = bd;
                 end
@@ -79,7 +79,7 @@ classdef nlp < handle
         
         function results = solve(obj, x0)
             ip = inputParser;
-            ip.FunctionName = 'nlp.solve';
+            ip.FunctionName = 'nonlinear_program.solve';
             ip.PartialMatching = false;
             ip.KeepUnmatched = false;
             ip.CaseSensitive = true;

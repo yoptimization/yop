@@ -1,8 +1,8 @@
-classdef relation < yop.node & yop.more_stupid_overhead
+classdef relation < yop.node
     methods
         function obj = relation(name, size, relation)
             obj@yop.node(name, size);
-            obj.relation = relation;
+            obj.operation = relation;
         end
         
         function obj = forward(obj)
@@ -10,7 +10,7 @@ classdef relation < yop.node & yop.more_stupid_overhead
             for k=1:size(args,2)
                 args{k} = obj.child(k).value;
             end
-            obj.value = obj.relation(args{:});
+            obj.value = obj.operation(args{:});
         end
         
         function graph = split(obj)
@@ -35,7 +35,7 @@ classdef relation < yop.node & yop.more_stupid_overhead
                 graph = yop.node_list().add(obj);
                 
             elseif isa(obj, 'yop.relation') && isa(obj.left, 'yop.relation') && ~isa(obj.right, 'yop.relation')
-                r = yop.relation(obj.name, size(obj), obj.relation);
+                r = yop.relation(obj.name, size(obj), obj.operation);
                 r.set_child(obj.left.right);
                 r.set_child(obj.right);
                 obj.left.right.set_parent(r);
@@ -62,7 +62,7 @@ classdef relation < yop.node & yop.more_stupid_overhead
                 yop.assert(false, yop.messages.graph_not_simple);
                 
             else
-                r = obj.relation(obj.left-obj.right, 0);
+                r = obj.operation(obj.left-obj.right, 0);
                 
             end
             
@@ -75,10 +75,10 @@ classdef relation < yop.node & yop.more_stupid_overhead
             %  e >  0  -->  -e <= 0
             %  e >= 0  -->  -e <= 0
             %  e == 0   =    e == 0
-            if isequal(obj.relation, @lt)
+            if isequal(obj.operation, @lt)
                 r = obj.left <= 0;
                 
-            elseif isequal(obj.relation, @gt) || isequal(obj.relation, @ge)
+            elseif isequal(obj.operation, @gt) || isequal(obj.operation, @ge)
                 r = -1*obj.left <= 0;
                 
             else

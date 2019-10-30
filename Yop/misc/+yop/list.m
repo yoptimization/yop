@@ -30,6 +30,12 @@ classdef list < handle
             end
         end
         
+        function obj = add_array(obj, cell_array)
+            for k=1:length(cell_array)
+                obj.add(cell_array{k});
+            end
+        end
+        
         function obj = remove(obj, e)
             for k=1:size(obj.elements, 2)
                 if isequal(obj.object(k), e)

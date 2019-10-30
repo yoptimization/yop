@@ -6,21 +6,14 @@ yop.options('my_fav_opts.mat');
 % parameter - parameter som ska optimeras
 % constant - konstant vars värde man kan ändra mellan körningar
 
-% t_0 = parameter('t_0');
-% t_f = parameter('t_f');
-% t = variable('t');
-% x = variable('x', [2, 1]);
-% u = variable('u');
-% l = constant('l', [1, 1]);
-% alpa = signal('alpha', @(t) f(t));
-
-t_0 = varible('t_0');
-t_f = varible('t_f');
-t = variable('t');
-x = variable('x', [2,1]);
-u = variable('u');
-l = varible('l', [1,1]);
-alpa = varible('alpha');
+t_0 = parameter('t_0');
+t_f = parameter('t_f');
+t   = variable('t');
+x   = variable('x', [2, 1]);
+u   = variable('u');
+l   = constant('l', [1, 1]);
+alpa = signal('alpha', [1, 1]);
+alpha.signal = @(t) f(t);
 
 [ode, cart] = trolley_model(t, x, u);
 
@@ -34,7 +27,7 @@ ocp.minimize( 1/2*integral( cart.acceleration^2 ) );
 constraint1 = some_expression <= some_other_expression;
 
 ocp.subject_to( ...
-    dot(x) == ode, ...
+    der(x) == trolley_model(x,u), ...
     alg(0) == ae, ...
     t0(cart.position) == 0, ...
     t0(cart.speed) == 1, ...
