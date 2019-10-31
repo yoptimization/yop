@@ -2,20 +2,29 @@ classdef lagrange_polynomial < handle & matlab.mixin.Copyable
     % LAGRANGE_POLYNOMIAL A class for creating and using Lagrange
     % polynomials.
     %    The class implements basic functionality for interpolating a set
-    %    of values using Lagrange polynomials.
-    %    
+    %    of values using Lagrange polynomials. The Lagrange polynomials are
+    %    calculated as:
+    %
+    %       L(t) = sum( l_j(t)*x_j )_{j=0}^{d}
+    %       l_j(t) = prod( (t - t_r)/(t_j - t_r) )_{r=0, r/=j}^{d}.
+    %
+    %    where L is the Lagrange polynomial, l_j the basis polynimals,
+    %    t the independent variable, t_i the sampling timepoints, x_j the
+    %    sampled values, and d the polynomial degree.
     %
     % -- Properties --
     %    timepoint : Row vector describing the sampling timepoints
+    %
     %    value     : Matrix describing the sampling values. Must have
-    %                equally many rows as in 'timepoint'. E.g. if the
-    %                sampled signal is scalar-valued, 'value' is a row
-    %                vector.
+    %                 equally many rows as in 'timepoint'. E.g. if the
+    %                 sampled signal is scalar-valued, 'value' is a row
+    %                 vector.
+    %
     %    basis     : Matrix containing the Lagrange basis polynomials.
     %
     % -- Methods --
     %    obj = lagrange_polynomial() : Constructor.
-    %   
+    %
     %    obj = init(obj, timepoints, values) : Initialization method.
     %
     %    obj = calculate_basis(obj) : Calculates the basis polynomials.
@@ -31,8 +40,7 @@ classdef lagrange_polynomial < handle & matlab.mixin.Copyable
     % -- Examples --
     %    % COPY INTO SCRIPT
     %    % Approximate the t^2 and t^3  at the specified timepoints using a
-    %    % second order polynomial. Will result in an exact interpolation of t^2 but
-    %    % only an approximation of t^3
+    %    % second order Lagrange polynomial.
     %    timepoints = [1,2,3]; % Three sample points results in 2:order polynomial.
     %    analytical_values = @(t) [t.^2; t.^3];
     %    analytical_derivative = @(t) [2*t; 3*t.^2];
@@ -56,9 +64,10 @@ classdef lagrange_polynomial < handle & matlab.mixin.Copyable
     %
     %    figure(3); hold on
     %    plot(t, analytical_integral(t))
-    %    plot(t, lp.integrate(0).evaluate(t), 'x')
+    %    plot(t, lp.integrate.evaluate(t), 'x')
     %    legend('1/3 t.^3', '1/4 t.^4', 'lp_1', 'lp_2')
-    %     
+    %    title('integration')
+    %
     % -- Details --
     %    For details, see:
     %    https://en.wikipedia.org/wiki/Lagrange_polynomial
@@ -72,7 +81,7 @@ classdef lagrange_polynomial < handle & matlab.mixin.Copyable
     methods
         
         function obj = lagrange_polynomial()
-            % LAGRANGE_POLYNOMIAL Class constructor 
+            % LAGRANGE_POLYNOMIAL Class constructor
             %    Takes no arguments but requires initialization. See the
             %    lagrange_polynomial.init method for more information
             %    regarding initialization.
@@ -97,7 +106,9 @@ classdef lagrange_polynomial < handle & matlab.mixin.Copyable
             %
             % -- Arguments --
             %    obj        : Handle to the Lagrange polynomial instance.
+            %
             %    timepoints : Sample timepoints. Specified as a row vector.
+            %
             %    values     : Sample values. Specified as a Matrix.
             %                  Must have as many columns as 'timepoints'.
             %                  Dimension of values are specified in the
@@ -128,12 +139,12 @@ classdef lagrange_polynomial < handle & matlab.mixin.Copyable
             % CALCULATE_BASIS Calculates the Lagrange polynomial basis
             %    For the given Lagrange polynomial:
             %
-            %       L(t) = sum( l_j(t)*x_t )_{j=0}^{d}
+            %       L(t) = sum( l_j(t)*x_j )_{j=0}^{d}
             %
             %    calculates the basis l_j for all j according to:
             %
             %       l_j(t) = prod( (t - t_r)/(t_j - t_r) )_{r=0, r/=j}^{d}.
-            %    
+            %
             % -- Syntax --
             %    obj.calulate_basis()
             %    calculate_basis(obj)
@@ -161,7 +172,7 @@ classdef lagrange_polynomial < handle & matlab.mixin.Copyable
             %    Evaluate the polynomial at time t, by evaluating the
             %    Lagrange polynomial:
             %
-            %       L(t) = sum( l_j(t)*x_t )_{j=0}^{d}
+            %       L(t) = sum( l_j(t)*x_j )_{j=0}^{d}
             %
             %    If t is a vector, it evaluates the polynomial at all
             %    timepoints.
@@ -172,6 +183,7 @@ classdef lagrange_polynomial < handle & matlab.mixin.Copyable
             %
             % -- Arguments --
             %    obj : Handle to the Lagrange polynomial instance.
+            %
             %    t   : Vector with the timepoints the polynomial should be
             %           evaluated at.
             %
@@ -193,8 +205,8 @@ classdef lagrange_polynomial < handle & matlab.mixin.Copyable
         
         function polynomial = integrate(obj, constant_term)
             % INTEGRATE Integrates the Lagrange polynomial
-            %    Integrates the Lagrange polynomial obj with the constant
-            %    term constant_term. Returns a new lagrange polynomial that 
+            %    Integrates the Lagrange polynomial with an optional
+            %    constant term. Returns a new lagrange polynomial that
             %    is the integration of the input.
             %
             % -- Syntax --
@@ -202,16 +214,23 @@ classdef lagrange_polynomial < handle & matlab.mixin.Copyable
             %    polynomial = obj.integrate(constant_term)
             %
             % -- Arguments --
-            %    obj           : Handle to the Lagrange polynomial to be 
+            %    obj           : Handle to the Lagrange polynomial to be
             %                     integrated.
-            %    constant_term : Constant of integration, specified as a
-            %                     numeric scalar.
-            %    polynomial    : Integration of the input polynomial  
+            %
+            %    polynomial    : Integration of the input polynomial
             %                     described as a new Lagrange polynomial.
-            % 
+            %
+            % -- Arguments (Optional) --
+            %    constant_term : Constant of integration, specified as a
+            %                     numeric scalar. Defaults to 0.
+            %
             % -- Examples --
             %    lp_int = lp.integrate(0)
             %    lp_int = integrate(lp, 0)
+            
+            if nargin == 1
+                constant_term = 0;
+            end
             
             [r, c] = size(obj.basis);
             new_basis = zeros(r, c+1);
@@ -235,7 +254,7 @@ classdef lagrange_polynomial < handle & matlab.mixin.Copyable
             % -- Arguments --
             %    obj        : Handle to the Lagrange polynomial to be
             %                  differentiated.
-            %    polynomial : Differentiation of the input polynomial 
+            %    polynomial : Differentiation of the input polynomial
             %                  described as a new Lagrange Polynomial.
             %
             % -- Examples --
