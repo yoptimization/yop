@@ -18,14 +18,14 @@ classdef options < handle &  matlab.mixin.SetGetExactNames
     %    symbolics - Controls which symbolic package to use.
     %
     % -- Methods --
-    %    obj = options(option_set) :Obtain the options currently used,
-    %                                reset to the default options, or load
-    %                                from file.
-    %    save(obj, file_name)      :Save the options to file file_name.
+    %    obj = options(option_set) : Obtain the options currently used,
+    %                                 reset to the default options, or load
+    %                                 from file.
+    %    save(obj, file_name)      : Save the options to file file_name.
     %
     % -- Methods (Static) --
-    %    set_symbolics(name)       :Set the symbolic package.
-    %    name = get_symbolics()    :Get the symbolic pacakge used.
+    %    set_symbolics(name)       : Set the symbolic package.
+    %    name = get_symbolics()    : Get the symbolic pacakge used.
     %
     % -- Details --
     %    The options class implements the singleton design pattern.
@@ -143,7 +143,7 @@ classdef options < handle &  matlab.mixin.SetGetExactNames
             %
             % -- Arguments --
             %    obj : Handle to the object for which the properties should
-            %          change.
+            %           change.
             %    model : Handle to the object that you want replicated.
             
             prop = properties(obj);

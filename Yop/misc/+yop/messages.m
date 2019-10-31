@@ -40,5 +40,9 @@ classdef messages < handle
            msg = '[Debug] Operation produced the wrong size of the node.';
        end
        
+       function msg = lagrange_polynomial_init_size_error()
+           msg = 'Lagrange polynomial initialization requires data to be provided as row vectors.';
+       end
+       
    end
 end

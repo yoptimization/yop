@@ -12,7 +12,7 @@ t   = variable('t');
 x   = variable('x', [2, 1]);
 u   = variable('u');
 l   = constant('l', [1, 1]);
-alpa = signal('alpha', [1, 1]);
+alpha = signal('alpha', [1, 1]);
 alpha.signal = @(t) f(t);
 
 [ode, cart] = trolley_model(t, x, u);
@@ -22,13 +22,17 @@ alpha.signal = @(t) f(t);
 % problemet mha yop? förs nlp-lösare sedan ocp-lösare
 ocp = optimization_problem('t0', t_0, 'tf', t_f, 'state', x, 'control', u, 'parameter', p);
 
-ocp.minimize( 1/2*integral( cart.acceleration^2 ) );
+ocp.minimize( 1/2*integral( cart.acceleration^2 ) + t0() + ti() + p );
+
+ocp1 + ocp2
+p1==p2==p3
 
 constraint1 = some_expression <= some_other_expression;
 
 ocp.subject_to( ...
     der(x) == trolley_model(x,u), ...
     alg(0) == ae, ...
+    du_lb <= der(der(u)) <= du_ub, ...
     t0(cart.position) == 0, ...
     t0(cart.speed) == 1, ...
     tf(cart.position) == 0, ...
@@ -38,14 +42,15 @@ ocp.subject_to( ...
     0 == t_0 <= t_f == 1 ...
     );
 
+t_0.value = 0;
+
 l.value = 2;
 alpha.signal =  @(t) f(t);
 
 ocp.method = 'direct_collocation';
-% help ocp.set.method
+% help ocp.set_method
 ocp.points = 'legendre';
-ocp.set('segments', 100, 'degree', 5);
-res = ocp.solve();
+res = ocp.solve('segments', 100, 'degree', 5);
 
 ocp.constraint(3).strict;
 strict(constraint1); % Trigger event;
@@ -63,6 +68,10 @@ res.plot(t, x(2));
 figure(2)
 res.plot(t, u);
 
+%% Interface to other software
+nlp = ocp.discretize('target', 'yalmip'); % yolmip
+nlp = ocp.discretize('target', 'casadi'); 
+nlp = ocp.discretize('target', 'symbolic math');
 %% Simulation
 simulator = yop.simulator('t0', t_0, 'tf', t_f, 'state', x, 'algebraic', z);
 

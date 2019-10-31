@@ -13,10 +13,9 @@ b   = 1;
 
 objective = @(x) 100*( x(2) - x(1)^2 )^2 + ( 1 - x(1) )^2;
 
-
 nlp = nonlinear_program('variable', x);
 nlp.minimize( objective(x) );
-%nlp.minimize(  100*( x2 - x1^2 )^2 + ( 1 - x1 )^2  );
+% nlp.minimize(  100*( x2 - x1^2 )^2 + ( 1 - x1 )^2  );
 nlp.subject_to( A*x <= b );
 
 % [0.5022,  0.2489]

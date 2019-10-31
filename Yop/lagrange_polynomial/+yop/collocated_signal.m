@@ -11,7 +11,7 @@ classdef collocated_signal < yop.collocation_polynomial
             end
         end
         
-        function values = evaluateAt(obj, time)
+        function values = evaluate_at(obj, time)
             values = [];
             for n=1:length(time)
                 for k=1:length(obj)

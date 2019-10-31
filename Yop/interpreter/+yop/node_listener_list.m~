@@ -4,12 +4,14 @@ classdef node_listener_list < yop.list
         function obj = node_listener_list()
         end
         
-        function obj = add(obj, e, listener)
-            new_elem = yop.node_listener_list_elem(e, listener);
+        function obj = add(obj, object, listener)
+            
             if isempty(obj.elements)
-                obj.elements = new_elem;
+                listener = addlistener(obj, 'value', 'PostSet', @object.clear);
+                obj.elements = yop.node_listener_list_elem(object, listener);
             else
-                if ~obj.contains(new_elem)
+                if obj.contains(object)
+                    listener = addlistener(obj, 'value', 'PostSet', @parent.clear);
                     obj.elements(end+1) = new_elem;
                 end
             end

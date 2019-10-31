@@ -1,4 +1,7 @@
 classdef collocation_polynomial < yop.lagrange_polynomial
+    % COLLOCATION_POLYNOMIAL Lagrange polynomials used in collocation
+    % methods.
+    
     properties
         valid_range
         step_factor = 1
@@ -6,10 +9,14 @@ classdef collocation_polynomial < yop.lagrange_polynomial
     
     methods
         
-        function obj = collocation_polynomial(coefficients, points, degree, valid_range)
+        function obj = collocation_polynomial()
+        end
+        
+        function obj = init(obj, points, degree, coefficients, valid_range)
+            % init('legendre', 5, x_disc, [0, 1]);
             collocation_points = ...
                 yop.collocation_polynomial.collocation_points(points, degree);
-            obj@yop.lagrange_polynomial(collocation_points, coefficients)
+            obj.init@yop.lagrange_polynomial(collocation_points, coefficients);
             obj.valid_range = valid_range;
         end
         

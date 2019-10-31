@@ -21,8 +21,8 @@ classdef list < handle
             obj.elements = [obj.elements, list.elements]; 
         end      
         
-        function obj = add(obj, e)
-            new_elem = yop.list_elem(e);
+        function obj = add(obj, object)
+            new_elem = yop.list_elem(object);
             if isempty(obj.elements)
                 obj.elements = new_elem;
             else
@@ -45,15 +45,34 @@ classdef list < handle
             end
         end
         
-        function bool = contains(obj, e)
+        function bool = contains(obj, object)
             bool = false;
             for k=1:size(obj.elements, 2)
-                if isequal(obj.object(k), e)
+                if isequal(obj.object(k), object)
                     bool = true;
                     break
                 end
             end
         end             
+        
+        function varargout = sort(obj, mode, varargin)
+            varargout = cell(size(varargin));
+            for n=1:length(varargout)
+                varargout{n} = yop.node_list();
+            end
+            
+            for k=1:length(obj)
+                for c=1:length(varargin)
+                    criteria = varargin{c};
+                    if criteria(obj.object(k))
+                        varargout{c}.add(obj.object(k));
+                        if mode=="first"
+                            break
+                        end
+                    end
+                end
+            end
+        end
         
         function s = size(obj)
             s = size(obj.elements);
