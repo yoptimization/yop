@@ -17,6 +17,8 @@ classdef collocation_polynomial < yop.lagrange_polynomial
     %    valid_range : Two element row vector specifying the valid range of
     %                   the polynomial. i.e. [t0, tf].
     %
+    %    step_factor : Keeps track of the inner derivative constant.
+    %
     % -- Properties (Derived) --
     %    timepoint : Row vector describing the sampling timepoints
     %
@@ -97,7 +99,11 @@ classdef collocation_polynomial < yop.lagrange_polynomial
     %    For details regarding Lagrange polynomials see:
     %    https://en.wikipedia.org/wiki/Lagrange_polynomial
     properties
-        valid_range
+        valid_range  % Valid range of the polynomial [t0, tf]
+        step_factor = 1; % Is a property because the polynomial functions
+                         %  cannot operate on yop objects. The purpose is
+                         %  keep track of the inner derivative in
+                         %  differentiation and inegration.
     end
     
     methods
@@ -182,7 +188,7 @@ classdef collocation_polynomial < yop.lagrange_polynomial
             %    value = cp.evaluate(0:0.1:1)
             %    value = evaluate(cp, 0.5)
             
-            value = obj.evaluate@yop.lagrange_polynomial(tau);
+            value = obj.evaluate@yop.lagrange_polynomial(tau).*obj.step_factor;
         end
         
         function polynomial = integrate(obj, constant_term)
@@ -217,7 +223,7 @@ classdef collocation_polynomial < yop.lagrange_polynomial
                 constant_term = 0;
             end
             polynomial = obj.integrate@yop.lagrange_polynomial(constant_term);
-            polynomial.basis = polynomial.basis.*obj.h;
+            polynomial.step_factor = polynomial.step_factor * obj.h;
         end
         
         function polynomial = differentiate(obj)
@@ -241,7 +247,7 @@ classdef collocation_polynomial < yop.lagrange_polynomial
             %    polynomial = obj.differentiate()
             %    polynomial = differentiate(obj)
             polynomial = obj.differentiate@yop.lagrange_polynomial();
-            polynomial.basis = polynomial.basis./obj.h;
+            polynomial.step_factor = polynomial.step_factor / obj.h;
         end
         
         function len = h(obj)
@@ -256,7 +262,7 @@ classdef collocation_polynomial < yop.lagrange_polynomial
             %
             %    len : Length of the valid range.
             
-            len = diff(obj.valid_range);
+            len = obj.valid_range(2) - obj.valid_range(1);
         end
         
         function t = t0(obj)
@@ -285,6 +291,7 @@ classdef collocation_polynomial < yop.lagrange_polynomial
             %    obj : A handle to the collocation polynomial.
             %
             %    t : The value of the end timepoint.
+            
             t = obj.valid_range(2);
         end
         

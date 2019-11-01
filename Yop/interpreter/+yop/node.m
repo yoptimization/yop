@@ -175,7 +175,7 @@ classdef node < handle
         function y = subsref(x, s)
             if s(1).type == "()" && (isnumeric(s(1).subs{1}) || strcmp(s(1).subs{1},':'))
                 tmp = ones(size(x));
-                tmp = tmp((s(1).subs{1}));
+                tmp = tmp(builtin('subsref', tmp, s));
                 
                 txt = [x.name '(' num2str(s(1).subs{1}) ')'];
                 y = yop.subs_operation(txt, size(tmp), @subsref);
