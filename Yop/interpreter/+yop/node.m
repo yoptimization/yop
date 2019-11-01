@@ -41,7 +41,7 @@ classdef node < handle
             c = obj.children.object(index);
         end
         
-        function obj = set_parent(obj, parent)
+        function obj = add_parent(obj, parent)
             listener = addlistener(obj, 'value', 'PostSet', @parent.clear);
             obj.parents.add(parent, listener);
             parent.value = [];
@@ -51,7 +51,7 @@ classdef node < handle
             obj.parents.remove(parent);
         end
         
-        function obj = set_child(obj, child)
+        function obj = add_child(obj, child)
             obj.children.add(child);
         end
         
@@ -100,7 +100,7 @@ classdef node < handle
             
         end
         
-        function bool = isa_symbol(obj)            
+        function bool = isa_symbol(obj)
             if isa(obj, 'yop.variable')
                 bool = true;
                 
@@ -108,11 +108,11 @@ classdef node < handle
                 bool = false;
                 
             else % has to be a subs_operation and therefore it's
-                 % sufficient to look at the first argument and see if that
-                 % tree only containts variables or subs_operations
+                % sufficient to look at the first argument and see if that
+                % tree only containts variables or subs_operations
                 bool = obj.child(1).isa_symbol();
                 
-            end            
+            end
         end
         
         function l = left(obj)
@@ -144,7 +144,7 @@ classdef node < handle
     end
     
     methods % Default changing behavior
-         
+        
         function s = size(obj, dim)
             if nargin == 2
                 if dim == 1
@@ -173,7 +173,7 @@ classdef node < handle
         end
         
         function y = subsref(x, s)
-            if s(1).type == "()" && isnumeric(s(1).subs{1})
+            if s(1).type == "()" && (isnumeric(s(1).subs{1}) || strcmp(s(1).subs{1},':'))
                 tmp = ones(size(x));
                 tmp = tmp((s(1).subs{1}));
                 
@@ -183,10 +183,10 @@ classdef node < handle
                 s_yop = yop.constant('s', [1, 1]);
                 s_yop.value = s(1);
                 
-                y.set_child(x);
-                y.set_child(s_yop);
-                x.set_parent(y);
-                s_yop.set_parent(y);                
+                y.add_child(x);
+                y.add_child(s_yop);
+                x.add_parent(y);
+                s_yop.add_parent(y);
                 
                 if length(s) > 1
                     y = subsref(y, s(2:end));
@@ -195,7 +195,7 @@ classdef node < handle
                 y = builtin('subsref', x, s);
             end
         end
-
+        
         function z = subsasgn(x, s, y)
             if s(1).type == "()" && isnumeric(s(1).subs{1})
                 y = yop.node.typecast(y);
@@ -205,62 +205,48 @@ classdef node < handle
                 s_yop = yop.constant('s', [1, 1]);
                 s_yop.value = s(1);
                 
-                z.set_child(x);
-                z.set_child(s_yop);
-                z.set_child(y);
-                x.set_parent(z);
-                s_yop.set_parent(z);
-                y.set_parent(z);                
+                z.add_child(x);
+                z.add_child(s_yop);
+                z.add_child(y);
+                x.add_parent(z);
+                s_yop.add_parent(z);
+                y.add_parent(z);
             else
                 z = builtin('subsasgn',x, s, y);
             end
         end
         
         function y = horzcat(varargin)
-            cols = 0;
-            cond = true;
-            for k = 1:length(varargin)
-                cond = cond && size(varargin{k},1)==size(varargin{1},1);
-                if cond
-                    varargin{k} = yop.node.typecast(varargin{k});
-                    cols = cols + size(varargin{k}, 2);
-                else
-                    break
-                end
-            end
-            yop.assert(cond, yop.messages.incompatible_size( ...
-                'horzcat', varargin{1}, varargin{k}));
+            args = varargin(~cellfun('isempty', varargin));
+            args = cellfun(@yop.node.typecast, args, 'UniformOutput', false);
             
-            y = yop.operation('horzcat', [size(varargin{1},1), cols], @horzcat);
+            yop.assert(all(cellfun('size', args, 1)), ...
+                yop.messages.incompatible_size('horzcat', args{1}, args{end}));
             
-            for k=1:length(varargin)
-                y.set_child(varargin{k});
-                varargin{k}.set_parent(y);
+            sz = [size(args{1},1), sum(cellfun('size', args, 2))];
+            y = yop.operation('horzcat', sz, @horzcat);
+            
+            for k=1:length(args)
+                y.add_child(args{k});
+                args{k}.add_parent(y);
             end
             
             yop.debug.validate_size(y, @horzcat, varargin{:});
         end
         
         function y = vertcat(varargin)
-            row_cnt = 0;
-            cond = true;
-            for k = 1:length(varargin)
-                cond = cond && size(varargin{k},2)==size(varargin{1},2);
-                if cond
-                    varargin{k} = yop.node.typecast(varargin{k});
-                    row_cnt = row_cnt + size(varargin{k}, 1);
-                else
-                    break
-                end
-            end
-            yop.assert(cond, yop.messages.incompatible_size( ...
-                'vertcat', varargin{1}, varargin{k}));
+            args = varargin(~cellfun('isempty', varargin));
+            args = cellfun(@yop.node.typecast, args, 'UniformOutput', false);
             
-            y = yop.operation('vertcat', [row_cnt, size(varargin{1},2)], @vertcat);
+            yop.assert(all(cellfun('size', args, 2)), ...
+                yop.messages.incompatible_size('vertcat', args{1}, args{end}));
             
-            for k=1:length(varargin)
-                y.set_child(varargin{k});
-                varargin{k}.set_parent(y);
+            sz = [sum(cellfun('size', args, 1)), size(args{1}, 2)];
+            y = yop.operation('vertcat', sz, @vertcat);
+            
+            for k=1:length(args)
+                y.add_child(args{k});
+                args{k}.add_parent(y);
             end
             
             yop.debug.validate_size(y, @vertcat, varargin{:});
@@ -282,8 +268,8 @@ classdef node < handle
                         end
                     end
                 end
-                visited.add(node);
-                ordering.add(node);
+                visited.add_unique(node);
+                ordering.add_unique(node);
             end
             
             recursion(obj);
@@ -315,10 +301,10 @@ classdef node < handle
             
             z = yop.operation('plus', [z_rows, z_cols], @plus);
             
-            z.set_child(x);
-            z.set_child(y);
-            x.set_parent(z);
-            y.set_parent(z);
+            z.add_child(x);
+            z.add_child(y);
+            x.add_parent(z);
+            y.add_parent(z);
             
             yop.debug.validate_size(z, @plus, x, y);
         end
@@ -335,26 +321,26 @@ classdef node < handle
             
             z = yop.operation('minus', [z_rows, z_cols], @minus);
             
-            z.set_child(x);
-            z.set_child(y);
-            x.set_parent(z);
-            y.set_parent(z);
+            z.add_child(x);
+            z.add_child(y);
+            x.add_parent(z);
+            y.add_parent(z);
             
             yop.debug.validate_size(z, @minus, x, y);
         end
         
         function y = uplus(x)
             y = yop.operation('uplus', size(x), @uplus);
-            y.set_child(x);
-            x.set_parent(y);
+            y.add_child(x);
+            x.add_parent(y);
             
             yop.debug.validate_size(y, @uplus, x);
         end
         
         function y = uminus(x)
             y = yop.operation('uminus', size(x), @uminus);
-            y.set_child(x);
-            x.set_parent(y);
+            y.add_child(x);
+            x.add_parent(y);
             
             yop.debug.validate_size(y, @uminus, x);
         end
@@ -371,10 +357,10 @@ classdef node < handle
             
             z = yop.operation('times', [z_rows, z_cols], @times);
             
-            z.set_child(x);
-            z.set_child(y);
-            x.set_parent(z);
-            y.set_parent(z);
+            z.add_child(x);
+            z.add_child(y);
+            x.add_parent(z);
+            y.add_parent(z);
             
             yop.debug.validate_size(z, @times, x, y);
         end
@@ -388,10 +374,10 @@ classdef node < handle
             
             z = yop.operation('mtimes', [size(x,1), size(y,2)], @mtimes);
             
-            z.set_child(x);
-            z.set_child(y);
-            x.set_parent(z);
-            y.set_parent(z);
+            z.add_child(x);
+            z.add_child(y);
+            x.add_parent(z);
+            y.add_parent(z);
             
             yop.debug.validate_size(z, @mtimes, x, y);
         end
@@ -408,10 +394,10 @@ classdef node < handle
             
             z = yop.operation('rdivide', [z_rows, z_cols], @rdivide);
             
-            z.set_child(x);
-            z.set_child(y);
-            x.set_parent(z);
-            y.set_parent(z);
+            z.add_child(x);
+            z.add_child(y);
+            x.add_parent(z);
+            y.add_parent(z);
             
             yop.debug.validate_size(z, @rdivide, x, y);
         end
@@ -428,10 +414,10 @@ classdef node < handle
             
             z = yop.operation('ldivide', [z_rows, z_cols], @ldivide);
             
-            z.set_child(x);
-            z.set_child(y);
-            x.set_parent(z);
-            y.set_parent(z);
+            z.add_child(x);
+            z.add_child(y);
+            x.add_parent(z);
+            y.add_parent(z);
             
             yop.debug.validate_size(z, @ldivide, x, y);
         end
@@ -445,10 +431,10 @@ classdef node < handle
             
             z = yop.operation('mrdivide', [size(y,1), size(x,1)], @mrdivide);
             
-            z.set_child(x);
-            z.set_child(y);
-            x.set_parent(z);
-            y.set_parent(z);
+            z.add_child(x);
+            z.add_child(y);
+            x.add_parent(z);
+            y.add_parent(z);
             
             yop.debug.validate_size(z, @mrdivide, x, y);
         end
@@ -462,10 +448,10 @@ classdef node < handle
             
             z = yop.operation('mldivide', [size(y,1), size(x,1)], @mldivide);
             
-            z.set_child(x);
-            z.set_child(y);
-            x.set_parent(z);
-            y.set_parent(z);
+            z.add_child(x);
+            z.add_child(y);
+            x.add_parent(z);
+            y.add_parent(z);
             
             yop.debug.validate_size(z, @mldivide, x, y);
         end
@@ -482,10 +468,10 @@ classdef node < handle
             
             z = yop.operation('power', [z_rows, z_cols], @power);
             
-            z.set_child(x);
-            z.set_child(y);
-            x.set_parent(z);
-            y.set_parent(z);
+            z.add_child(x);
+            z.add_child(y);
+            x.add_parent(z);
+            y.add_parent(z);
             
             yop.debug.validate_size(z, @power, x, y);
         end
@@ -503,18 +489,18 @@ classdef node < handle
             
             z = yop.operation('mpower', [z_rows, z_cols], @mpower);
             
-            z.set_child(x);
-            z.set_child(y);
-            x.set_parent(z);
-            y.set_parent(z);
+            z.add_child(x);
+            z.add_child(y);
+            x.add_parent(z);
+            y.add_parent(z);
             
             yop.debug.validate_size(z, @mpower, x, y);
         end
         
         function y = exp(x)
             y = yop.operation('exp', size(x), @exp);
-            y.set_child(x);
-            x.set_parent(y);
+            y.add_child(x);
+            x.add_parent(y);
             
             yop.debug.validate_size(y, @exp, x);
         end
@@ -523,32 +509,32 @@ classdef node < handle
             cond = size(x,1)==size(x,2);
             yop.assert(cond, yop.messages.wrong_size('expm', x));
             y = yop.operation('exp', size(x), @expm);
-            y.set_child(x);
-            x.set_parent(y);
+            y.add_child(x);
+            x.add_parent(y);
             
             yop.debug.validate_size(y, @expm, x);
         end
         
         function y = ctranspose(x)
             y = yop.operation('ctranspose', [x.columns, x.rows], @ctranspose);
-            y.set_child(x);
-            x.set_parent(y);
+            y.add_child(x);
+            x.add_parent(y);
             
             yop.debug.validate_size(y, @ctranspose, x);
         end
         
         function y = transpose(x)
             y = yop.operation('transpose', [x.columns, x.rows], @transpose);
-            y.set_child(x);
-            x.set_parent(y);
+            y.add_child(x);
+            x.add_parent(y);
             
             yop.debug.validate_size(y, @transpose, x);
         end
         
         function y = sign(x)
             y = yop.operation('sign', [1, 1], @sign);
-            y.set_child(x);
-            x.set_parent(y);
+            y.add_child(x);
+            x.add_parent(y);
             
             yop.debug.validate_size(y, @sign, x);
         end
@@ -562,10 +548,10 @@ classdef node < handle
             
             z = yop.operation('dot', size(x), @dot);
             
-            z.set_child(x);
-            z.set_child(y);
-            x.set_parent(z);
-            y.set_parent(z);
+            z.add_child(x);
+            z.add_child(y);
+            x.add_parent(z);
+            y.add_parent(z);
             
             yop.debug.validate_size(z, @dot, x, y);
         end
@@ -573,36 +559,36 @@ classdef node < handle
         function y = integral(x)
             x = yop.node.typecast(x);
             y = yop.operation('integral', size(x), @integral);
-            y.set_child(x);
-            x.set_parent(y);
+            y.add_child(x);
+            x.add_parent(y);
         end
         
         function y = t0(x)
             x = yop.node.typecast(x);
             y = yop.operation('t0', size(x), @t0);
-            y.set_child(x);
-            x.set_parent(y);
+            y.add_child(x);
+            x.add_parent(y);
         end
         
         function y = tf(x)
             x = yop.node.typecast(x);
             y = yop.operation('tf', size(x), @tf);
-            y.set_child(x);
-            x.set_parent(y);
+            y.add_child(x);
+            x.add_parent(y);
         end
         
         function y = der(x)
             x = yop.node.typecast(x);
             y = yop.operation('der', size(x), @der);
-            y.set_child(x);
-            x.set_parent(y);
+            y.add_child(x);
+            x.add_parent(y);
         end
         
         function y = alg(x)
             x = yop.node.typecast(x);
             y = yop.operation('alg', size(x), @alg);
-            y.set_child(x);
-            x.set_parent(y);
+            y.add_child(x);
+            x.add_parent(y);
         end
         
         function z = cross(x, y)
@@ -632,10 +618,10 @@ classdef node < handle
             yop.assert(cond, yop.messages.incompatible_size('<', lhs, rhs));
             
             r = yop.relation('<', size(lhs), @lt);
-            r.set_child(lhs);
-            r.set_child(rhs);
-            lhs.set_parent(r);
-            rhs.set_parent(r); 
+            r.add_child(lhs);
+            r.add_child(rhs);
+            lhs.add_parent(r);
+            rhs.add_parent(r);
         end
         
         function r = gt(lhs, rhs)
@@ -653,10 +639,10 @@ classdef node < handle
             yop.assert(cond, yop.messages.incompatible_size('>', lhs, rhs));
             
             r = yop.relation('>', size(lhs), @gt);
-            r.set_child(lhs);
-            r.set_child(rhs);
-            lhs.set_parent(r);
-            rhs.set_parent(r); 
+            r.add_child(lhs);
+            r.add_child(rhs);
+            lhs.add_parent(r);
+            rhs.add_parent(r);
         end
         
         function r = le(lhs, rhs)
@@ -674,10 +660,10 @@ classdef node < handle
             yop.assert(cond, yop.messages.incompatible_size('<=', lhs, rhs));
             
             r = yop.relation('<=', size(lhs), @le);
-            r.set_child(lhs);
-            r.set_child(rhs);
-            lhs.set_parent(r);
-            rhs.set_parent(r); 
+            r.add_child(lhs);
+            r.add_child(rhs);
+            lhs.add_parent(r);
+            rhs.add_parent(r);
         end
         
         function r = ge(lhs, rhs)
@@ -695,10 +681,10 @@ classdef node < handle
             yop.assert(cond, yop.messages.incompatible_size('>=', lhs, rhs));
             
             r = yop.relation('>=', size(lhs), @ge);
-            r.set_child(lhs);
-            r.set_child(rhs);
-            lhs.set_parent(r);
-            rhs.set_parent(r); 
+            r.add_child(lhs);
+            r.add_child(rhs);
+            lhs.add_parent(r);
+            rhs.add_parent(r);
         end
         
         function r = ne(lhs, rhs)
@@ -716,10 +702,10 @@ classdef node < handle
             yop.assert(cond, yop.messages.incompatible_size('~=', lhs, rhs));
             
             r = yop.relation('~=', size(lhs), @ne);
-            r.set_child(lhs);
-            r.set_child(rhs);
-            lhs.set_parent(r);
-            rhs.set_parent(r);
+            r.add_child(lhs);
+            r.add_child(rhs);
+            lhs.add_parent(r);
+            rhs.add_parent(r);
         end
         
         function r = eq(lhs, rhs)
@@ -737,21 +723,37 @@ classdef node < handle
             yop.assert(cond, yop.messages.incompatible_size('==', lhs, rhs));
             
             r = yop.relation('==', size(lhs), @eq);
-            r.set_child(lhs);
-            r.set_child(rhs);
-            lhs.set_parent(r);
-            rhs.set_parent(r); 
+            r.add_child(lhs);
+            r.add_child(rhs);
+            lhs.add_parent(r);
+            rhs.add_parent(r);
         end
         
         % --- Logic ---
         % Size scalar?
         % ------------------------------------------------------------------------------------------------
         
+        function r = reshape(A, varargin)
+            sz = size(reshape(ones(size(A)), varargin{:}));
+            varargin = cellfun(@yop.node.typecast, varargin, ...
+                'UniformOutput', false);
+            
+            r = yop.operation('reshape', sz, @reshape);
+            
+            r.add_child(A);
+            A.add_parent(r);
+            for k=1:length(varargin)
+                r.add_child(varargin{k});
+                varargin{k}.add_parent(r);
+            end
+            
+        end
+        
     end
     
     
     methods (Static)
-
+        
         function v = typecast(v)
             if ~isa(v, 'yop.node')
                 v = yop.constant(yop.keywords().default_name_constant, ...
@@ -785,12 +787,12 @@ classdef node < handle
                     criteria = varargin{k};
                     if criteria(node)
                         varargout{k}.add(node);
-                        match = true; 
+                        match = true;
                         if mode=="first"
                             break
                         end
                     end
-                end                
+                end
                 visited.add(node);
                 if ~match
                     for k=1:length(node.children)

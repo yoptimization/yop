@@ -30,6 +30,12 @@ classdef list < handle
             end
         end
         
+        function obj = add_unique(obj, object)
+            if ~obj.contains(object)
+                obj.add(object);
+            end
+        end
+        
         function obj = add_array(obj, cell_array)
             for k=1:length(cell_array)
                 obj.add(cell_array{k});
