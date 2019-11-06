@@ -197,7 +197,7 @@ classdef lagrange_polynomial < handle & matlab.mixin.Copyable
             for n=1:length(t)
                 v = 0;
                 for j=1:obj.degree+1
-                    v = v + polyval(obj.basis(j,:), t(n)) .* obj.value(:,j);
+                    v = v + yop.lagrange_polynomial.polyval(obj.basis(j,:), t(n)) .* obj.value(:,j);
                 end
                 values = [values, v];
             end
@@ -289,4 +289,19 @@ classdef lagrange_polynomial < handle & matlab.mixin.Copyable
         end
         
     end
+    
+    methods (Static)
+        
+        function y = polyval(p, x)
+            y = zeros(size(x), superiorfloat(x, p));
+            if ~isempty(p)
+                y(:) = p(1);
+            end
+            for k = 2:length(p)
+                y = x .* y + p(k);
+            end
+        end
+        
+    end
+    
 end

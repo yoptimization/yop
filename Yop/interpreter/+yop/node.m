@@ -1,4 +1,4 @@
-classdef node < handle
+classdef node < handle & matlab.mixin.Copyable
     
     properties
         name % Name of the node.
@@ -30,7 +30,7 @@ classdef node < handle
             obj.rows = size(1);
             obj.columns = size(2);
             obj.parents = yop.node_listener_list();
-            obj.children = yop.list();
+            obj.children = yop.list();            
         end
         
         function p = parent(obj, index)
@@ -223,7 +223,7 @@ classdef node < handle
             yop.assert(all(cellfun('size', args, 1)), ...
                 yop.messages.incompatible_size('horzcat', args{1}, args{end}));
             
-            sz = [size(args{1},1), sum(cellfun('size', args, 2))];
+            sz = [size(args{1},1), sum(cellfun(@(x) size(x,2), args))];
             y = yop.operation('horzcat', sz, @horzcat);
             
             for k=1:length(args)
@@ -241,7 +241,7 @@ classdef node < handle
             yop.assert(all(cellfun('size', args, 2)), ...
                 yop.messages.incompatible_size('vertcat', args{1}, args{end}));
             
-            sz = [sum(cellfun('size', args, 1)), size(args{1}, 2)];
+            sz = [sum(cellfun(@(x) size(x,1), args)), size(args{1}, 2)];
             y = yop.operation('vertcat', sz, @vertcat);
             
             for k=1:length(args)
@@ -257,8 +257,8 @@ classdef node < handle
     methods % Computational graph
         
         function obj = order_nodes(obj)
-            visited = yop.list;
-            ordering = yop.list;
+            visited = yop.list();
+            ordering = yop.list();
             
             function recursion(node)
                 if isa(node, 'yop.operation') || isa(node, 'yop.relation')
@@ -274,6 +274,24 @@ classdef node < handle
             
             recursion(obj);
             obj.eval_order = ordering;
+        end
+        
+        function [depth, nodes] = graph_size(obj)            
+            visited = yop.list;
+            function d = recursion(node)
+                d = 1;
+                for k=1:length(node.children)
+                    if ~visited.contains(node.child(k))
+                        d_k = 1 + recursion(node.child(k));
+                        if d_k > d
+                            d = d_k;
+                        end
+                    end
+                end
+                visited.add_unique(node);
+            end
+            depth = recursion(obj);
+            nodes = length(visited);
         end
         
         function value = evaluate(obj)
@@ -748,6 +766,18 @@ classdef node < handle
             end
             
         end
+        
+    end
+    
+    methods(Access = protected)
+        
+%         function cp_obj = copyElement(obj)
+%             cp_obj = copyElement@matlab.mixin.Copyable(obj);
+%             
+%             % Parents, children, eval_order
+%             cp_obj.parents = yop.node_list();
+%             cp_obj.DeepObj = copy(obj.DeepObj);
+%         end
         
     end
     

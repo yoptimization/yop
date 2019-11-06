@@ -46,7 +46,6 @@ classdef list < handle
             for k=1:size(obj.elements, 2)
                 if isequal(obj.object(k), e)
                     obj.elements = obj.elements([1:k-1, k+1:size(obj.elements,2)]);
-                    break
                 end
             end
         end
@@ -59,7 +58,7 @@ classdef list < handle
                     break
                 end
             end
-        end             
+        end
         
         function varargout = sort(obj, mode, varargin)
             varargout = cell(size(varargin));
