@@ -36,9 +36,9 @@ classdef relation < yop.node
                 
             elseif isa(obj, 'yop.relation') && isa(obj.left, 'yop.relation') && ~isa(obj.right, 'yop.relation')
                 r = yop.relation(obj.name, size(obj), obj.operation);
-                r.set_child(obj.left.right);
-                r.set_child(obj.right);
-                obj.left.right.set_parent(r);
+                r.add_child(obj.left.right);
+                r.add_child(obj.right);
+                obj.left.right.add_parent(r);
                 graph = obj.left.split.add(r);
                 
             else

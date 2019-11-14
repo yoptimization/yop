@@ -1,4 +1,4 @@
-classdef list < handle
+classdef list < handle & matlab.mixin.Copyable
     
     properties
         elements

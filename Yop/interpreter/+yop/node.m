@@ -1,4 +1,4 @@
-classdef node < handle & matlab.mixin.Copyable
+classdef node < handle %& matlab.mixin.Copyable
     
     properties
         name % Name of the node.
@@ -576,35 +576,49 @@ classdef node < handle & matlab.mixin.Copyable
         
         function y = integral(x)
             x = yop.node.typecast(x);
-            y = yop.operation('integral', size(x), @integral);
+            y = yop.operation('integral', size(x), @yop.integral);
             y.add_child(x);
             x.add_parent(y);
         end
         
+        function y = integrate(x)
+            y = integral(x);
+        end
+        
         function y = t0(x)
             x = yop.node.typecast(x);
-            y = yop.operation('t0', size(x), @t0);
+            y = yop.operation('t0', size(x), @yop.t0);
             y.add_child(x);
             x.add_parent(y);
         end
         
         function y = tf(x)
             x = yop.node.typecast(x);
-            y = yop.operation('tf', size(x), @tf);
+            y = yop.operation('tf', size(x), @yop.tf);
             y.add_child(x);
             x.add_parent(y);
         end
         
+        function y = t(x, t_value)
+            x = yop.node.typecast(x);
+            t_value = yop.node.typecast(t_value);
+            y = yop.operation('tk', size(x), @yop.t);
+            y.add_child(x);
+            y.add_child(t_value);
+            x.add_parent(y);
+            t_value.add_parent(y);
+        end
+        
         function y = der(x)
             x = yop.node.typecast(x);
-            y = yop.operation('der', size(x), @der);
+            y = yop.operation('der', size(x), @yop.der);
             y.add_child(x);
             x.add_parent(y);
         end
         
         function y = alg(x)
             x = yop.node.typecast(x);
-            y = yop.operation('alg', size(x), @alg);
+            y = yop.operation('alg', size(x), @yop.alg);
             y.add_child(x);
             x.add_parent(y);
         end
@@ -769,8 +783,8 @@ classdef node < handle & matlab.mixin.Copyable
         
     end
     
-    methods(Access = protected)
-        
+%     methods(Access = protected)
+%         
 %         function cp_obj = copyElement(obj)
 %             cp_obj = copyElement@matlab.mixin.Copyable(obj);
 %             
@@ -778,8 +792,8 @@ classdef node < handle & matlab.mixin.Copyable
 %             cp_obj.parents = yop.node_list();
 %             cp_obj.DeepObj = copy(obj.DeepObj);
 %         end
-        
-    end
+%         
+%     end
     
     
     methods (Static)
@@ -801,10 +815,11 @@ classdef node < handle & matlab.mixin.Copyable
                 || size(x,2)==1 && size(y,1)==1;
         end
         
-        function varargout = sort(obj, mode, varargin)
+        function varargout = sort(obj, varargin)
             % Search tree in order to find subtrees mathching the criterias
             % in varargin.
             
+            criteria = varargin;
             visited = yop.list;
             varargout = cell(size(varargin));
             for n=1:length(varargout)
@@ -812,18 +827,19 @@ classdef node < handle & matlab.mixin.Copyable
             end
             
             function recursion(node)
+                
+                % Test criterias on node, if match then break
                 match = false;
-                for k=1:length(varargin)
-                    criteria = varargin{k};
-                    if criteria(node)
+                for k=1:length(criteria)
+                    if criteria{k}(node)
                         varargout{k}.add(node);
                         match = true;
-                        if mode=="first"
-                            break
-                        end
+                        break
                     end
                 end
                 visited.add(node);
+                
+                % Test children
                 if ~match
                     for k=1:length(node.children)
                         if ~visited.contains(node.child(k))
