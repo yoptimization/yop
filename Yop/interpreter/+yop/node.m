@@ -1,4 +1,4 @@
-classdef node < handle %& matlab.mixin.Copyable
+classdef node < handle & matlab.mixin.Copyable
     
     properties
         name % Name of the node.
@@ -71,6 +71,14 @@ classdef node < handle %& matlab.mixin.Copyable
         
         function obj = forward(obj)
         end
+        
+        function bool = isa_leaf(obj)
+            bool = isa(obj, 'yop.variable') || isa(obj, 'yop.constant');
+        end
+        
+%         function bool = isa_root(obj)
+%             bool = obj.parents.length == 0;
+%         end
         
         function bool = isa_valid_relation(obj)
             % tests for the following structure where r is a relation and e
@@ -585,30 +593,6 @@ classdef node < handle %& matlab.mixin.Copyable
             y = integral(x);
         end
         
-        function y = t0(x)
-            x = yop.node.typecast(x);
-            y = yop.operation('t0', size(x), @yop.t0);
-            y.add_child(x);
-            x.add_parent(y);
-        end
-        
-        function y = tf(x)
-            x = yop.node.typecast(x);
-            y = yop.operation('tf', size(x), @yop.tf);
-            y.add_child(x);
-            x.add_parent(y);
-        end
-        
-        function y = t(x, t_value)
-            x = yop.node.typecast(x);
-            t_value = yop.node.typecast(t_value);
-            y = yop.operation('tk', size(x), @yop.t);
-            y.add_child(x);
-            y.add_child(t_value);
-            x.add_parent(y);
-            t_value.add_parent(y);
-        end
-        
         function y = der(x)
             x = yop.node.typecast(x);
             y = yop.operation('der', size(x), @yop.der);
@@ -783,17 +767,32 @@ classdef node < handle %& matlab.mixin.Copyable
         
     end
     
-%     methods(Access = protected)
-%         
-%         function cp_obj = copyElement(obj)
-%             cp_obj = copyElement@matlab.mixin.Copyable(obj);
-%             
-%             % Parents, children, eval_order
-%             cp_obj.parents = yop.node_list();
-%             cp_obj.DeepObj = copy(obj.DeepObj);
-%         end
-%         
-%     end
+    methods
+        
+        function cp_obj = copy_structure(obj)
+            % Copies the structure of an expression graph. It does not
+            % copies leafs, but the rest is copied. The primary purpose of
+            % this method is that the copied structure is later going to be
+            % changed, and then it would be undesirable to change the user
+            % object. But since the correct experession given by the user
+            % must be maintained leafs are not copied.
+            
+            if obj.isa_leaf() || obj.isa_symbol()
+                cp_obj = obj;
+                
+            else
+                cp_obj = copy(obj);
+                cp_obj.parents = yop.node_listener_list();
+                cp_obj.children = yop.list();
+                for k=1:obj.children.length
+                    child_k = copy_structure(obj.child(k));
+                    cp_obj.add_child(child_k);
+                    child_k.add_parent(cp_obj);
+                end                   
+            end
+        end
+        
+    end
     
     
     methods (Static)

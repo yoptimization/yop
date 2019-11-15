@@ -4,10 +4,11 @@ import yop.*
 t0 = parameter('t0');
 tf = parameter('tf');
 t  = variable('t');
-x  = variable('x', 'rows', 2);
+x  = variable('x', 2);
 u  = variable('u');
 
-ocp = optimization_problem('t',t,'t0',t0,'tf',tf,'state',x,'control',u);
+ocp = optimization_problem(...
+    't', t, 't0', t0, 'tf', tf, 'state', x, 'control',u);
 
 ocp.minimize( 1/2*integral( u^2 ) );
 
@@ -17,6 +18,39 @@ ocp.subject_to( ...
     x(tf)  == [0;-1],    ...
     x(1)   <= 1/9,       ...
     0 == t0 <= tf == 1   ...
+    );
+
+sol = ocp.solve();
+
+figure(1)
+subplot(211);
+sol.plot(t, x(1));
+subplot(212);
+sol.plot(t, x(2));
+
+figure(2)
+sol.plot(t, u);
+
+%% Bryson-denham alternativ implementation:
+import yop.*
+
+t  = variable('t');
+x  = variable('x', 2);
+u  = variable('u');
+
+ocp = optimization_problem( ...
+    't', t, 't0', 0,'tf', 1, 'state', x, 'control', u);
+
+s = x(1); v = x(2); a = u;
+
+ocp.minimize( 1/2*integral( a^2 ) );
+
+ocp.subject_to( ...
+    der(s) == v,              ...
+    der(v) == a,              ...
+    s(t==0) ==  s(t==1) == 0, ...
+    v(t==0) == -v(t==1) == 1, ...
+    s <= 1/9                  ...
     );
 
 sol = ocp.solve();
@@ -63,6 +97,7 @@ sol = ocp.solve('control_intervals', 100);
 %% Genset transient optimization
 import yop.*
 
+uf_max = constant('uf_max');
 t0 = parameter('t0');
 tf = parameter('tf');
 t  = variable('t');
@@ -136,14 +171,14 @@ ocp.subject_to(...
     ... terminal conditions
     genset.generator.power(tf) == 100e3, ...
     genset.generator.energy(tf) == 100e3, ...
-    genset.dxdt(1:4).t0 == 0, ... '.t0' invokes a method call to 't0(obj)'
+    genset.dxdt(1:4).at(t0) == 0, ... '.t0' invokes a method call to 't0(obj)'
     ... Box constraints
     rpm2rad(800) <= genset.engine.speed       <= rpm2rad(2500), ...
     8.0889e+04   <= genset.intake.pressure    <= 350000, ...
     9.1000e+04   <= genset.exhaust.pressure   <= 400000, ...
        500       <= genset.turbocharger.speed <= 15000, ...
         0        <= genset.generator.energy   <= 300e3, ...
-        0        <= genset.cylinder.fuel_injection <= 150, ...
+        0        <= genset.cylinder.fuel_injection <= uf_max, ...
         0        <= genset.wastegate.control  <= 1, ...
         0        <= genset.generator.power    <= 100e3, ...
     ... Path constraints
@@ -159,6 +194,8 @@ ocp.scale('objective', 'weight', 1e3);
 ocp.scale(x, 'weight', [rpm2rad(1e-3); 1e-5; 1e-5; 1e-3; 1e-5]);
 ocp.scale(u, 'weight', [1e-2; 1e-5; 1e-5]);
 
+uf_max.value = 150;
+
 sol = ocp.solve( ...
     'solver', 'ipopt', ...
     'solver_options', struct('acceptable_tol', 1e-7), ...
@@ -168,6 +205,8 @@ sol = ocp.solve( ...
     'state_polynomial_degree', 3 ...
     );
 
+uf_max.value = 200; 
+sol2 = ocp.solve(sol.opts);
 %% Goddard model
 function [dx, rocket, drag, gravity] = goddard_model(t, x, u)
 % States and controls
